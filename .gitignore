@@ -1,0 +1,8 @@
+vendor/
+artifacts/
+tools/
+**/bin/
+**/obj/
+**/PCL/
+.superpowers/
+*.user
