@@ -13,9 +13,14 @@ static class ImageTests {
   var options=new CompilerParameters {GenerateExecutable=scenario!="DLL candidate",OutputAssembly=path,TempFiles=new TempFileCollection(dir,false),CompilerOptions="/optimize+"};options.ReferencedAssemblies.Add("System.dll");
   if(scenario!="missing adaptation marker")options.EmbeddedResources.Add(marker);
   using(var compiler=new CSharpCodeProvider()) {var result=compiler.CompileAssemblyFromSource(options,"using System.Reflection;[assembly:AssemblyVersion(\""+version+"\")]class App {static void Main(){System.IO.File.WriteAllText(@\""+ran.Replace("\"","\"\"")+"\",\"bad\");}}");if(result.Errors.HasErrors)throw new Exception("fixture compile failed: "+result.Errors[0]);}
+  if(scenario=="empty name metadata retry") {
+   using(var module=dnlib.DotNet.ModuleDefMD.Load(path)) {module.Assembly.Name="";module.Write(path+".bin");}
+   path+=".bin";name="";
+  }
   var feed=new Feed{Version=new Version(2,8,2,0),Revision=2,Sha=UpdateCore.Hash(path),Url="https://example.com/adapted.exe"};
-  bool rejected=false;try{UpdateCore.VerifyImage(path,feed,scenario=="wrong assembly identity"?"OtherPCL":name);}catch(InvalidDataException){rejected=true;}
-  if(rejected!=(scenario!="valid adapted image"))throw new Exception("unexpected image verification outcome");
+  bool rejected=false;try{UpdateCore.VerifyImage(path,feed,scenario=="wrong assembly identity"?"OtherPCL":name);}catch(InvalidDataException e){if(scenario=="empty name metadata retry")throw new Exception(e.ToString());rejected=true;}
+  if(rejected!=(scenario!="valid adapted image"&&scenario!="empty name metadata retry"))throw new Exception("unexpected image verification outcome");
+  if(scenario=="empty name metadata retry")UpdateCore.VerifyImage(path,feed,name);
   if(File.Exists(ran))throw new Exception("candidate was executed");
  }
 }

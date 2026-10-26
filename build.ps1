@@ -1,4 +1,4 @@
-param([ValidateRange(1,2147483647)][int]$PatchRevision = 1)
+﻿param([ValidateRange(1,2147483647)][int]$PatchRevision = 1)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $officialCommit = '93ede5d9e638c99fcec853a9ba1eecd91ceee7f5'

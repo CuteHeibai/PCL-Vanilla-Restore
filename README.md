@@ -6,7 +6,7 @@
 
 ## 使用
 
-从 Releases 下载 `PCL-Vanilla-Restore-2.99.0.1-r1.exe`，放入可写目录后运行；也可重命名为 `PCL 原版下载恢复版.exe`。交付只需这个 EXE；缓存、帮助文件、游戏安装临时资源及更新文件会写入同目录的 `PCL` 文件夹。游戏目录可以在启动器中选择。
+从 Releases 下载最新 `PCL-Vanilla-Restore-*.exe`，放入可写目录后运行；也可重命名为 `PCL 原版下载恢复版.exe`。交付只需这个 EXE；缓存、帮助文件、游戏安装临时资源及更新文件会写入同目录的 `PCL` 文件夹。游戏目录可以在启动器中选择。
 
 更新使用已经适配并验证的完整修改版。官方发布了新版本并不代表它立即可更新；未适配版本不会覆盖当前修改版。程序不会回到官方更新通道。
 
@@ -32,7 +32,7 @@ Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集�
 - 官方提交：`93ede5d9e638c99fcec853a9ba1eecd91ceee7f5`。
 - 官方 EXE SHA-256：`0db34e19d9eeb6d496d20fabe786ec16bbd36ba6b0ccdc8d29cb7e909c114397`。
 
-`src/Patcher` 使用 dnlib 修改副本；`src/InjectedHooks` 的类型注入目标程序集；`src/RestoreRuntime` 的 DLL 嵌入为资源并从内存加载，不在用户机器上释放额外 DLL。完整官方 EXE、反编译调查输出、账号数据与游戏文件不纳入源码仓库。
+`src/Patcher` 使用 dnlib 修改副本；`src/InjectedHooks` 的类型注入目标程序集；`src/RestoreRuntime` 的 DLL 和用于读取候选元数据的 dnlib 均嵌入为资源并从内存加载，不在用户机器上释放额外 DLL，也不加载执行候选程序。dnlib 使用 MIT 许可，许可文本随成品嵌入，另见 [docs/dnlib-LICENSE.txt](docs/dnlib-LICENSE.txt)。完整官方 EXE、反编译调查输出、账号数据与游戏文件不纳入源码仓库。
 
 新增上游版本需要新增明确的输入绑定和适配实现，并通过隔离验收；不要直接放宽输入校验。所有修改方法的原始特征记录在成品的 `PCLRestore.Profile.json` 资源中。
 

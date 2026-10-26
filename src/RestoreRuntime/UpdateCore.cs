@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using System.Text;
 using System.Web.Script.Serialization;
 [assembly: InternalsVisibleTo("UpdaterTests")]
 namespace PCLRestore.Runtime {
@@ -33,16 +34,22 @@ namespace PCLRestore.Runtime {
     if(bytes.Length<128||bytes[0]!=77||bytes[1]!=90)throw new InvalidDataException("更新文件不是可执行程序。");
     int pe=BitConverter.ToInt32(bytes,60);if(pe<64||pe>bytes.Length-24||BitConverter.ToUInt32(bytes,pe)!=0x4550)throw new InvalidDataException("更新文件 PE 标识无效。");
     ushort flags=BitConverter.ToUInt16(bytes,pe+22);if((flags&2)==0||(flags&0x2000)!=0)throw new InvalidDataException("更新文件不是启动器。");
-    // Metadata-only load: candidate code and module initializers are never executed.
-    var asm=Assembly.ReflectionOnlyLoad(bytes);var name=asm.GetName();
-    if(!String.Equals(name.Name,identity,StringComparison.Ordinal)||name.Version!=feed.Version)throw new InvalidDataException("更新程序名称或版本不匹配。");
-    using(var stream=asm.GetManifestResourceStream("PCLRestore.Profile.json")) {
-     if(stream==null||stream.Length>65536)throw new InvalidDataException("更新程序缺少适配标记。");
-     Dictionary<string,object> profile;using(var reader=new StreamReader(stream))profile=Json(reader.ReadToEnd());
-     object vanilla,portable;
-     if(Version4(Str(profile,"upstreamVersion"))!=feed.Version||Int(profile,"patchRevision")!=feed.Revision||Int(profile,"updaterProtocol")!=1||!profile.TryGetValue("vanillaDownload",out vanilla)||!(vanilla is bool)||!(bool)vanilla||!profile.TryGetValue("portableTemp",out portable)||!(portable is bool)||!(bool)portable)throw new InvalidDataException("更新程序未完成所需适配。");
-    }
+    MetadataDependency.EnsureLoaded();
+    VerifyMetadata(bytes,feed,identity);
    }catch(InvalidDataException){throw;}catch(Exception e){throw new InvalidDataException("更新程序元数据无法验证。",e);}
+  }
+  // Kept separate so the embedded metadata reader is loaded before this method is JIT compiled.
+  [MethodImpl(MethodImplOptions.NoInlining)]
+  static void VerifyMetadata(byte[] bytes,Feed feed,string identity) {
+   using(var module=dnlib.DotNet.ModuleDefMD.Load(bytes,new dnlib.DotNet.ModuleCreationOptions {TryToLoadPdbFromDisk=false})) {
+    if(module.Assembly==null||!String.Equals(module.Assembly.Name.String,identity,StringComparison.Ordinal)||module.Assembly.Version!=feed.Version)throw new InvalidDataException("更新程序名称或版本不匹配。");
+    dnlib.DotNet.EmbeddedResource marker=null;
+    foreach(var resource in module.Resources)if(resource.Name=="PCLRestore.Profile.json")marker=resource as dnlib.DotNet.EmbeddedResource;
+    if(marker==null||marker.Length>65536)throw new InvalidDataException("更新程序缺少适配标记。");
+    var profile=Json(Encoding.UTF8.GetString(marker.CreateReader().ReadBytes((int)marker.Length)).TrimStart('\uFEFF'));
+    object vanilla,portable;
+    if(Version4(Str(profile,"upstreamVersion"))!=feed.Version||Int(profile,"patchRevision")!=feed.Revision||Int(profile,"updaterProtocol")!=1||!profile.TryGetValue("vanillaDownload",out vanilla)||!(vanilla is bool)||!(bool)vanilla||!profile.TryGetValue("portableTemp",out portable)||!(portable is bool)||!(bool)portable)throw new InvalidDataException("更新程序未完成所需适配。");
+   }
   }
  }
 }
