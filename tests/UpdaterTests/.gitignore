@@ -1,0 +1,5 @@
+bin/
+obj/
+fixtures/
+hash-fixture.bin
+settings-fixture.json
