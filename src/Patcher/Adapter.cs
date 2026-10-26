@@ -80,7 +80,13 @@ internal sealed class Adapter
         var pure=Method("PCL.ModBase/_Closure$__","_Lambda$__0-1"); Track(pure);
         SetBody(pure,Instruction.Create(OpCodes.Call,Hook("PureRoot")),Instruction.Create(OpCodes.Ret));
         var task=Method("PCL.ModMain","RequestTaskTempFolder"); Track(task);
-        SetBody(task,Instruction.Create(OpCodes.Ldarg_0),Instruction.Create(OpCodes.Call,Hook("TaskFolder")),Instruction.Create(OpCodes.Ret));
+        var clear=Method("PCL.ModMain","TryClearTaskTemp"); Track(clear);
+        SetBody(task,Instruction.Create(OpCodes.Call,clear),Instruction.Create(OpCodes.Ldarg_0),Instruction.Create(OpCodes.Call,Hook("TaskFolder")),Instruction.Create(OpCodes.Ret));
+        var cleanup=clear.Body.Instructions;
+        int cleanupStart=cleanup.ToList().FindIndex(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s.Contains("ProgramData\\PCL\\TaskTemp"));
+        if(cleanupStart<0) throw new InvalidDataException("Legacy task cleanup anchor missing.");
+        int cleanupEnd=cleanup.ToList().FindIndex(cleanupStart,i=>i.OpCode==OpCodes.Pop);
+        for(int n=cleanupStart;n<=cleanupEnd;n++) {cleanup[n].OpCode=OpCodes.Nop;cleanup[n].Operand=null;}
         var startup=Method("PCL.Application","Application_Startup"); Track(startup);
         foreach(var i in startup.Body.Instructions.Where(i=>i.Operand is IMethod m && m.FullName=="System.String System.IO.Path::GetTempPath()").Take(2)) i.Operand=Hook("ExeDirectory");
         int coreReady=startup.Body.Instructions.ToList().FindIndex(i=>i.Operand is IMethod m && m.FullName=="System.Void MeloongCore.Wpf.Main::Init()");

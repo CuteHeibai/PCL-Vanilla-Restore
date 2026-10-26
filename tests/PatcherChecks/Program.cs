@@ -14,10 +14,22 @@ Check(actual.GetTypes().Any(t=>t.FullName=="PCLRestore.Hooks"),"portable hook im
 var nav=Method(actual,"PCL.PageDownloadLeft",".ctor");
 Check(!nav.Body.Instructions.Any(i=>i.Operand is IMethod m && m.Name=="get_ItemMod"),"download navigation defaults to vanilla");
 Check(!actual.GetAssemblyRefs().Any(a=>a.Name=="InjectedHooks"),"injected hooks have no external DLL dependency");
+bool Calls(MethodDef m,string type,string name) => m.Body.Instructions.Any(i=>i.Operand is IMethod call && call.DeclaringType.FullName==type && call.Name==name);
+Check(Calls(Method(actual,"PCL.ModBase",".cctor"),"PCLRestore.Hooks","PortableRoot"),"global temp path is portable");
+Check(Calls(Method(actual,"PCL.Application","Application_Startup"),"PCLRestore.Hooks","PrepareEnvironment"),"child process temporary environment is portable");
+Check(!Body(Method(actual,"PCL.ModMain","RequestTaskTempFolder")).Contains("ProgramData"),"task folders have no external fallback");
+Check(Calls(Method(actual,"PCL.ModMain","RequestTaskTempFolder"),"PCL.ModMain","TryClearTaskTemp"),"task allocation waits for startup cleanup");
+Check(!Body(Method(actual,"PCL.ModMain","TryClearTaskTemp")).Contains("ProgramData"),"cleanup never deletes outside portable task directory");
+Check(Calls(Method(actual,"PCL.ModBase/_Closure$__","_Lambda$__0-1"),"PCLRestore.Hooks","PureRoot"),"native resource path has no external fallback");
+Check(actual.Resources.Any(r=>r.Name=="PCLRestore.Runtime.dll"),"update runtime is embedded");
+Check(Calls(Method(actual,"PCL.ModSecret","UpdateCheckByButton"),"PCLRestore.Hooks","Dispatch"),"manual update routes to adapted channel");
+Check(!actual.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="Latest.exe"),"no second cached launcher EXE");
+var originalOAuth=original.GetTypes().Single(t=>t.FullName=="PCL.ModSecret").Fields.Single(f=>f.Name=="OAuthClientId");
+var actualOAuth=actual.GetTypes().Single(t=>t.FullName=="PCL.ModSecret").Fields.Single(f=>f.Name=="OAuthClientId");
+Check(Equals(originalOAuth.Constant.Value,actualOAuth.Constant.Value),"official OAuth client ID is preserved");
 foreach(var typeName in new[]{"PCL.ModLaunch","PCL.PageDownloadModify","PCL.ModModpack"})
 {
- var before=original.GetTypes().Single(t=>t.FullName==typeName);
- var after=actual.GetTypes().Single(t=>t.FullName==typeName);
- Check(before.Methods.Where(m=>m.HasBody).All(m=>Body(m)==Body(after.Methods.Single(n=>n.Name==m.Name && n.MethodSig.ToString()==m.MethodSig.ToString()))),typeName+" existing behavior retained");
+ var originals=original.GetTypes().Where(t=>t.FullName==typeName || t.FullName.StartsWith(typeName+"/"));
+ Check(originals.All(before=>{var after=actual.GetTypes().Single(t=>t.FullName==before.FullName); return before.Methods.Where(m=>m.HasBody).All(m=>Body(m)==Body(after.Methods.Single(n=>n.Name==m.Name && n.MethodSig.ToString()==m.MethodSig.ToString())));}),typeName+" existing behavior retained");
 }
 Environment.ExitCode=failures==0?0:1;
