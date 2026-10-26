@@ -19,9 +19,9 @@
 Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集，以及内置 Windows PowerShell。
 
 ```powershell
-./build.ps1
-# 同一上游版本的后续修订：
 ./build.ps1 -PatchRevision 2
+# 同一上游版本的后续修订：
+./build.ps1 -PatchRevision 3
 ```
 
 脚本从固定官方提交获取输入，校验其 SHA-256，编译适配工具、嵌入式更新模块和回归检查，输出 `artifacts/dist/PCL 原版下载恢复版.exe` 与供更新通道使用的同内容 `.bin` 文件。
@@ -42,4 +42,4 @@ Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集�
 
 清单字段：`schemaVersion`、`upstreamVersion`、`patchRevision`、`artifactUrl`、`artifactSha256`，附官方来源提交和原始文件校验值。运行端校验版本、哈希、程序集身份及原版下载/便携路径/更新协议标记后才允许安装。
 
-更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)。上游使用说明与分发要求见 [LICENCE](LICENCE)。
+修改说明见 [docs/changes.md](docs/changes.md)，更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)。可用 Windows PowerShell 执行 `tests/VerifyPublishedRelease.ps1` 检查公开通道下载及重复元数据校验。上游使用说明与分发要求见 [LICENCE](LICENCE)。

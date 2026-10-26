@@ -21,4 +21,10 @@
 - 突然断电恢复不在当前事务测试范围内。
 - 用户要求暂停 Computer Use 后未再执行界面操作。r2 的变化仅为更新元数据读取与依赖嵌入；此前的真实启动、下载、组件管理及 WPF 替换验收保留为对应阶段证据。公开下载校验和真实 WPF 替换分别验证，未将其描述为一次从远端开始的完整界面更新。
 
-公开更新通道的远端下载校验记录在发布后补充。
+## 公开发布校验
+
+正式发布为 `2.99.0.1-r2`，源码与稳定清单位于 `CuteHeibai/PCL-Vanilla-Restore` 的 main 分支。先上传并发布成品，再更新稳定清单。
+
+使用 `tests/VerifyPublishedRelease.ps1` 在全新 Windows PowerShell 进程中读取真实 EXE 内嵌的更新模块，调用生产 `ReadFeed`、`Download` 和 `VerifyImage`。已成功获取公开 main 清单和 Release 的完整 `.bin`，两次校验均通过，下载字节与本地成品 SHA-256 一致。该下载目录仅生成 candidate.bin，没有释放 DLL 或临时 PCL EXE。GitHub 两个资产的摘要也与本地一致。
+
+命令：`powershell.exe -NoProfile -NonInteractive -File tests/VerifyPublishedRelease.ps1`。此项验证公开下载与校验；不调用界面、不替换用户正在运行的程序。
