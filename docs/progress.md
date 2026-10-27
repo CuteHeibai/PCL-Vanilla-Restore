@@ -11,7 +11,7 @@ Current implementation: r3 bootstraps from pinned official 2.99.0.1, then follow
 - [x] Recursive release-binary privacy scan and r2 bootstrap compatibility validation.
 - [x] Usage, update-contract, verification and user-acceptance documentation.
 
-r3 EXE SHA256: fdc4027b085845057fa786f9700d3be4d7c62c5883f87ff1bfbb8b62aa67c51e. Publication order: source branch, release assets, then main/stable bootstrap feed. Future unknown structural changes must be rejected, not installed unmodified.
+r3 published as 2.99.0.1-r3. EXE SHA256: fdc4027b085845057fa786f9700d3be4d7c62c5883f87ff1bfbb8b62aa67c51e. Source and stable bootstrap feed are on main. Publication order was source branch, release assets, then main/stable feed. Public EXE download matched the validated image; the old r2 embedded updater downloaded and verified public r3 twice. Future unknown structural changes must be rejected, not installed unmodified.
 
 Prior published r2 SHA256: 0db17d8120beda3175136b34c3a8810d9ae29177516a22776e1505c3a6b387fa. Existing user 2.8.2 EXE SHA256: 82d9044513afe207445df7e6142bb6e017335f600a6879b19ec6016ae440ee12; never overwrite the original launcher or existing game data.
 
