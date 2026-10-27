@@ -8,7 +8,9 @@
 
 从 Releases 下载最新 `PCL-Vanilla-Restore-*.exe`，放入可写目录后运行；也可重命名为 `PCL 原版下载恢复版.exe`。交付只需这个 EXE；缓存、帮助文件、游戏安装临时资源及更新文件会写入同目录的 `PCL` 文件夹。游戏目录可以在启动器中选择。
 
-更新使用已经适配并验证的完整修改版。官方发布了新版本并不代表它立即可更新；未适配版本不会覆盖当前修改版。程序不会回到官方更新通道。
+r3 起跟随官方正式版更新：查询官方 `最新正式版.zip` 的提交，下载对应固定提交的原包，在本机恢复 MC 下载、便携路径与下一次自动恢复能力，校验通过后再替换和重启。适配引擎、运行库与 dnlib 均嵌在 EXE 中，无需 SDK、编译器或配套 DLL。
+
+自动恢复支持关键方法结构兼容的官方新版。版本号变化可以自动处理；关键结构变化时会拒绝安装并保留当前可用版本，需要升级适配引擎。不能保证所有未来官方版本都能自动恢复。官方包仅重新压缩而 EXE 未变化时，记住该次核对结果，避免重复提示下载。
 
 更新暂存、备份、脚本及日志在 `PCL\Cache\Update`。使用 Windows 自带 PowerShell 替换原路径上的唯一启动器 EXE，不生成临时 PCL 更新 EXE。系统策略阻止辅助脚本时会取消更新并保留当前版本。
 
@@ -19,8 +21,6 @@
 Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集，以及内置 Windows PowerShell。
 
 ```powershell
-./build.ps1 -PatchRevision 2
-# 同一上游版本的后续修订：
 ./build.ps1 -PatchRevision 3
 ```
 
@@ -32,14 +32,14 @@ Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集�
 - 官方提交：`93ede5d9e638c99fcec853a9ba1eecd91ceee7f5`。
 - 官方 EXE SHA-256：`0db34e19d9eeb6d496d20fabe786ec16bbd36ba6b0ccdc8d29cb7e909c114397`。
 
-`src/Patcher` 使用 dnlib 修改副本；`src/InjectedHooks` 的类型注入目标程序集；`src/RestoreRuntime` 的 DLL 和用于读取候选元数据的 dnlib 均嵌入为资源并从内存加载，不在用户机器上释放额外 DLL，也不加载执行候选程序。dnlib 使用 MIT 许可，许可文本随成品嵌入，另见 [docs/dnlib-LICENSE.txt](docs/dnlib-LICENSE.txt)。完整官方 EXE、反编译调查输出、账号数据与游戏文件不纳入源码仓库。
+`src/AdaptationCore` 共享 net8/net48 适配引擎，`src/Patcher` 是固定输入的构建入口；`src/InjectedHooks` 的类型注入目标程序集。`src/RestoreRuntime`、适配引擎和 dnlib 均嵌入为资源并从内存加载，不在用户机器上释放额外 DLL。官方候选只作为数据解析，完成适配和验证后才安装执行。dnlib 使用 MIT 许可，许可文本随成品嵌入，另见 [docs/dnlib-LICENSE.txt](docs/dnlib-LICENSE.txt)。完整官方 EXE、反编译调查输出、账号数据与游戏文件不纳入源码仓库。
 
-新增上游版本需要新增明确的输入绑定和适配实现，并通过隔离验收；不要直接放宽输入校验。所有修改方法的原始特征记录在成品的 `PCLRestore.Profile.json` 资源中。
+构建输入仍固定 SHA-256。运行时适配将关键方法与内嵌兼容性契约比较；原版登录、已安装版本组件管理及整合包限制的方法体必须在修改前后保持一致。每次适配的官方提交、原始哈希和方法特征记录在成品的 `PCLRestore.Profile.json`；输入/成品哈希另记在更新目录的 `adaptation.json`。结构不兼容时应更新规则并验收，不应关闭校验。
 
 ## 发布和更新接口
 
-更新清单位于 `update/stable.json`。发布标签格式为 `2.99.0.1-r1`；Release 中的 `PCL-Restore.bin` 是适配成品，和用户下载的 EXE 内容一致。先上传经过验证的版本和更新数据，再更新稳定清单。
+`update/stable.json` 保留给 r2 等旧客户端引导升级到 r3。r3 的正常检查直接查询官方仓库，兼容时在本机自动恢复，不等待本仓库为每个官方版本发布成品。发布标签格式为 `2.99.0.1-r3`；Release 的 `PCL-Restore.bin` 与供用户分发的 EXE 字节相同，用户只需下载和分发 EXE。先发布资产，再更新稳定清单。
 
 清单字段：`schemaVersion`、`upstreamVersion`、`patchRevision`、`artifactUrl`、`artifactSha256`，附官方来源提交和原始文件校验值。运行端校验版本、哈希、程序集身份及原版下载/便携路径/更新协议标记后才允许安装。
 
-修改说明见 [docs/changes.md](docs/changes.md)，更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)。可用 Windows PowerShell 执行 `tests/VerifyPublishedRelease.ps1` 检查公开通道下载及重复元数据校验。上游使用说明与分发要求见 [LICENCE](LICENCE)。
+修改说明见 [docs/changes.md](docs/changes.md)，更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)，用户验收步骤见 [docs/acceptance.md](docs/acceptance.md)。可用 Windows PowerShell 执行 `tests/VerifyOfficialAutoRestore.ps1` 验证真实官方原包下载和连续两代本地恢复；`tests/VerifyPublishedRelease.ps1` 检查旧客户端引导通道。上游使用说明与分发要求见 [LICENCE](LICENCE)。

@@ -1,4 +1,4 @@
-﻿param([ValidateRange(1,2147483647)][int]$PatchRevision = 1)
+﻿param([ValidateRange(1,2147483647)][int]$PatchRevision = 3)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $officialCommit = '93ede5d9e638c99fcec853a9ba1eecd91ceee7f5'
@@ -18,7 +18,7 @@ if (-not (Test-Path -LiteralPath $officialExe)) {
     } finally { $archive.Dispose() }
 }
 if ((Get-FileHash -LiteralPath $officialExe -Algorithm SHA256).Hash -ne $officialHash) { throw 'Unsupported official EXE; input SHA-256 differs.' }
-foreach ($project in @('src/InjectedHooks','src/RestoreRuntime','src/Patcher','tests/PatcherChecks','tests/UpdaterTests')) {
+foreach ($project in @('src/InjectedHooks','src/AdaptationCore','src/RestoreRuntime','src/Patcher','tests/PatcherChecks','tests/UpdaterTests','tests/AutoAdaptTests')) {
     & dotnet build $project -c Release --nologo -v:q
     if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
 }
@@ -27,10 +27,12 @@ $output = Join-Path $PSScriptRoot 'artifacts\dist\PCL 原版下载恢复版.exe'
 if ($LASTEXITCODE -ne 0) { throw 'Binary adaptation failed.' }
 & dotnet 'tests/PatcherChecks/bin/Release/net8.0/PatcherChecks.dll' $officialExe $output
 if ($LASTEXITCODE -ne 0) { throw 'Binary checks failed.' }
-& 'tests/UpdaterTests/bin/Release/net48/UpdaterTests.exe'
-if ($LASTEXITCODE -ne 0) { throw 'Updater regression tests failed.' }
 $artifact = Join-Path $PSScriptRoot 'artifacts\dist\PCL-Restore.bin'
 Copy-Item -LiteralPath $output -Destination $artifact -Force
+& dotnet 'tests/AutoAdaptTests/bin/Release/net8.0/AutoAdaptTests.dll' $officialExe $artifact 'src/RestoreRuntime/bin/Release/net48/PCLRestore.Runtime.dll'
+if ($LASTEXITCODE -ne 0) { throw 'Automatic adaptation checks failed.' }
+& 'tests/UpdaterTests/bin/Release/net48/UpdaterTests.exe'
+if ($LASTEXITCODE -ne 0) { throw 'Updater regression tests failed.' }
 $manifest = [ordered]@{
     schemaVersion = 1
     upstreamVersion = '2.99.0.1'

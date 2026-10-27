@@ -2,7 +2,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
+using PCLRestore.Adaptation;
 
 namespace PclRestore.Patcher;
 
@@ -12,12 +12,14 @@ internal sealed class Adapter
     private readonly ModuleDefMD module;
     private readonly TypeDef hooks;
     private readonly int revision;
+    private readonly string version, sourceHash, sourceCommit;
     private readonly Dictionary<string,string> before=new();
-    public Adapter(ModuleDefMD module,string hooksPath,int revision)
+    public Adapter(ModuleDefMD module,byte[] hooksImage,int revision,string sourceHash,string sourceCommit)
     {
         this.module=module;
         this.revision=revision;
-        using var library=ModuleDefMD.Load(hooksPath);
+        this.version=module.Assembly.Version.ToString(); this.sourceHash=sourceHash; this.sourceCommit=sourceCommit;
+        using var library=ModuleDefMD.Load(hooksImage);
         hooks=TypeInjector.Inject(module,library.GetTypes().Single(t=>t.FullName=="PCLRestore.Hooks"));
     }
     private MethodDef Method(string type,string name) => module.GetTypes().Single(t=>t.FullName==type).Methods.Single(m=>m.Name==name);
@@ -25,7 +27,7 @@ internal sealed class Adapter
     private void Track(MethodDef m)
     {
         string key=m.FullName;
-        if(!before.ContainsKey(key)) before[key]=Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\n",m.Body.Instructions)))).ToLowerInvariant();
+        if(!before.ContainsKey(key)) before[key]=Hashing.Sha(Encoding.UTF8.GetBytes(string.Join("\n",m.Body.Instructions)));
         m.Body.SimplifyBranches();
     }
     private static void SetBody(MethodDef m,params Instruction[] instructions)
@@ -108,7 +110,7 @@ internal sealed class Adapter
         if(initialize)
         {
             var path=module.GetTypes().Single(t=>t.FullName=="PCL.ModBase").Fields.Single(f=>f.Name=="PathExe");
-            code.AddRange(new[]{Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_0),Instruction.Create(OpCodes.Ldsfld,path),Instruction.Create(OpCodes.Stelem_Ref),Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_1),Instruction.Create(OpCodes.Ldstr,"2.99.0.1"),Instruction.Create(OpCodes.Stelem_Ref),Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_2),Instruction.Create(OpCodes.Ldc_I4,revision),Instruction.Create(OpCodes.Box,module.CorLibTypes.Int32.TypeDefOrRef),Instruction.Create(OpCodes.Stelem_Ref)});
+            code.AddRange(new[]{Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_0),Instruction.Create(OpCodes.Ldsfld,path),Instruction.Create(OpCodes.Stelem_Ref),Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_1),Instruction.Create(OpCodes.Ldstr,version),Instruction.Create(OpCodes.Stelem_Ref),Instruction.Create(OpCodes.Dup),Instruction.Create(OpCodes.Ldc_I4_2),Instruction.Create(OpCodes.Ldc_I4,revision),Instruction.Create(OpCodes.Box,module.CorLibTypes.Int32.TypeDefOrRef),Instruction.Create(OpCodes.Stelem_Ref)});
         }
         code.Add(Instruction.Create(OpCodes.Call,Hook("Call"))); code.Add(Instruction.Create(OpCodes.Pop));
         int at=0;
@@ -119,9 +121,9 @@ internal sealed class Adapter
         }
         foreach(var i in code) target.Body.Instructions.Insert(at++,i);
     }
-    public void AddUpdater(string runtimePath)
+    public void AddUpdater(byte[] runtimeImage)
     {
-        module.Resources.Add(new EmbeddedResource("PCLRestore.Runtime.dll",File.ReadAllBytes(runtimePath),ManifestResourceAttributes.Private));
+        module.Resources.Add(new EmbeddedResource("PCLRestore.Runtime.dll",runtimeImage,ManifestResourceAttributes.Private));
         RuntimeCall(Method("PCL.Application","Application_Startup"),"Initialize",true);
         var loaded=Method("PCL.FormMain","FormMain_Loaded");
         // Ready is reported after the original Loaded handler has returned successfully.
@@ -145,9 +147,9 @@ internal sealed class Adapter
         AppendHook(Method("PCL.PageOtherAbout","PageOtherAbout_Loaded"),"About");
         // Keep the original author/version and add a visible third-party suffix.
         foreach(var m in module.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody))
-        foreach(var i in m.Body.Instructions.Where(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="正式版 2.99.0.1"))
-        { Track(m); i.Operand="正式版 2.99.0.1 · 原版下载恢复版 r"+revision; }
-        var profile=new{upstreamVersion="2.99.0.1",patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit="93ede5d9e638c99fcec853a9ba1eecd91ceee7f5",sourceExeSha256=InputHash,methodFingerprints=before};
-        module.Resources.Add(new EmbeddedResource("PCLRestore.Profile.json",Encoding.UTF8.GetBytes(JsonSerializer.Serialize(profile)),ManifestResourceAttributes.Public));
+        foreach(var i in m.Body.Instructions.Where(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="正式版 "+version))
+        { Track(m); i.Operand="正式版 "+version+" · 原版下载恢复版 r"+revision; }
+        var profile=new AdaptationProfile{upstreamVersion=version,patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit=sourceCommit,sourceExeSha256=sourceHash,methodFingerprints=before,officialAutoRestore=updater,adapterProtocol=1};
+        module.Resources.Add(new EmbeddedResource("PCLRestore.Profile.json",JsonData.Write(profile),ManifestResourceAttributes.Public));
     }
 }

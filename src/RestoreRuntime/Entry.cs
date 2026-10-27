@@ -9,15 +9,19 @@ using System.Web.Script.Serialization;
 using System.Windows;
 namespace PCLRestore.Runtime {
  public static class Entry {
+  // Kept for verifying/bootstrap-upgrading old r2 clients; normal updates use OfficialSource.
   internal const string FeedUrl="https://raw.githubusercontent.com/CuteHeibai/PCL-Vanilla-Restore/main/update/stable.json";
   static readonly object StateGate=new object();
-  static string exe,root;static Version version;static int revision,busy;
+  static string exe,root,sourceCommit="",sourceSha="";static Version version;static int revision,busy;
   public static object Initialize(object[] args) {
    try {
     if(args==null||args.Length!=3||!(args[0] is string)||!(args[1] is string)||!(args[2] is int))return false;
     string path=Path.GetFullPath((string)args[0]);var v=UpdateCore.Version4((string)args[1]);int r=(int)args[2];
     if(r<0||!File.Exists(path)||!String.Equals(Path.GetExtension(path),".exe",StringComparison.OrdinalIgnoreCase))return false;
-    lock(StateGate) {exe=path;root=Path.Combine(Path.GetDirectoryName(path),"PCL","Cache","Update");version=v;revision=r;}
+    lock(StateGate) {
+     exe=path;root=Path.Combine(Path.GetDirectoryName(path),"PCL","Cache","Update");version=v;revision=r;sourceCommit="";sourceSha="";
+     using(var stream=Assembly.GetEntryAssembly().GetManifestResourceStream("PCLRestore.Profile.json"))if(stream!=null)using(var reader=new StreamReader(stream)){var profile=UpdateCore.Json(reader.ReadToEnd());sourceCommit=UpdateCore.Str(profile,"sourceCommit");sourceSha=UpdateCore.Str(profile,"sourceExeSha256");}
+    }
     return true;
    }catch{return false;}
   }
@@ -47,13 +51,19 @@ namespace PCLRestore.Runtime {
      }
      File.Delete(pendingPath);
     }
-    Feed feed=UpdateCore.TryFeed(()=>ReadFeed(FeedUrl));
-    if(feed==null){Log("更新源不可用或没有兼容的适配版本。");if(!silent)Message("暂时无法获取适配版更新，请稍后重试。");return false;}
-    if(!UpdateCore.IsNewer(feed,version,revision)){if(!silent)Message("当前已是最新适配版。");return false;}
-    if((!silent||settings.PromptBeforeInstall)&&!Confirm("发现适配版 "+feed.Version+"（修订 "+feed.Revision+"）。\n是否下载并安装？安装后将自动重启。"))return false;
-    string candidate=Path.Combine(root,"candidate.bin");Download(feed.Url,candidate,512L*1024*1024);
-    UpdateCore.VerifyImage(candidate,feed,AssemblyName.GetAssemblyName(exe).Name);
-    var transaction=new Transaction {Directory=root,Exe=exe,Candidate=candidate,Backup=Path.Combine(root,"previous.bak"),Session=Guid.NewGuid().ToString("N"),ExpectedSha=feed.Sha,OriginalSha=UpdateCore.Hash(exe),Pid=Process.GetCurrentProcess().Id};
+    OfficialRelease release;
+    try {release=OfficialSource.ParseCommitList(ReadFeed(OfficialSource.CommitApiUrl));}catch(Exception e){Log("无法查询官方更新："+e.Message);if(!silent)Message("暂时无法获取官方正式版更新，请稍后重试。");return false;}
+    if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message("当前已是最新官方正式版，原版下载恢复功能已启用。");return false;}
+    string noUpdateState=Path.Combine(root,"unchanged-official.json"),installedSha=UpdateCore.Hash(exe);
+    if(OfficialUpdate.IsKnownNoUpdate(noUpdateState,release.Commit,installedSha)){if(!silent)Message("已核对此官方安装包，没有更新的可用版本，当前启动器保持不变。");return false;}
+    if((!silent||settings.PromptBeforeInstall)&&!Confirm("官方正式版安装包已更新。\n"+release.Message+"\n是否下载并在本机恢复原版 MC 下载功能？\n仅在适配校验通过后替换并重启；不兼容时保留当前版本。"))return false;
+    string archive=Path.Combine(root,"official-"+release.Commit+".zip.bin"),raw=Path.Combine(root,"official-source.bin"),candidate=Path.Combine(root,"candidate.bin");
+    Download(release.ArchiveUrl,archive,512L*1024*1024);OfficialSource.ExtractOriginal(archive,raw);
+    Version incoming=OfficialUpdate.InspectVersion(raw);string incomingSha=UpdateCore.Hash(raw);
+    if(!OfficialUpdate.ShouldInstall(incoming,incomingSha,version,sourceSha)){OfficialUpdate.RememberNoUpdate(noUpdateState,release.Commit,installedSha);if(!silent)Message("官方安装包没有更新的可用版本，当前启动器保持不变。");return false;}
+    var prepared=OfficialUpdate.Prepare(raw,exe,candidate,revision,release.Commit);
+    Log("官方原包已在本机适配并验证："+prepared.Version+"，源 "+prepared.SourceSha+"，成品 "+prepared.Sha);
+    var transaction=new Transaction {Directory=root,Exe=exe,Candidate=candidate,Backup=Path.Combine(root,"previous.bak"),Session=Guid.NewGuid().ToString("N"),ExpectedSha=prepared.Sha,OriginalSha=UpdateCore.Hash(exe),Pid=Process.GetCurrentProcess().Id};
     ownSession=transaction.Session;
     string powershell=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),"System32","WindowsPowerShell","v1.0","powershell.exe");
     if(!File.Exists(powershell))throw new IOException("未找到 Windows PowerShell。");
@@ -70,12 +80,12 @@ namespace PCLRestore.Runtime {
      Thread.Sleep(100);
     }
     if(!started)throw new IOException("更新脚本未能启动，请检查 PowerShell 策略。");
-    helperLaunched=true;Log("已启动适配版更新事务 "+ownSession);
+    helperLaunched=true;Log("已启动官方更新与本地恢复事务 "+ownSession);
     gate.Dispose();gate=null;
     var app=Application.Current;if(app==null)throw new InvalidOperationException("启动器窗口尚未就绪。");
     app.Dispatcher.BeginInvoke(new Action(()=>app.Shutdown()));
     return true;
-   }catch(Exception e){Log("更新未完成："+e.Message);if(!silent)Message("更新未完成："+e.Message);return false;}
+   }catch(Exception e){Log("官方更新/本地恢复未完成："+e.Message);if(!silent)Message("官方更新或自动恢复未完成，当前启动器保持不变。\n"+e.Message);return false;}
    finally {
     if(gate!=null)gate.Dispose();
     if(!helperLaunched&&ownSession!=null){try{string path=Path.Combine(root,"pending.json");if(File.Exists(path)&&UpdateCore.Str(UpdateCore.Json(File.ReadAllText(path)),"session")==ownSession)File.Delete(path);}catch{}}

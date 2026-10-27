@@ -24,6 +24,8 @@ class Program {
   Test("ready binds session and hash",()=>RuntimeTests.Ready(true));
   Test("wrong image cannot mark ready",()=>RuntimeTests.Ready(false));
   foreach(var scenario in new[]{"valid adapted image","wrong assembly version","wrong assembly identity","missing adaptation marker","wrong patch revision","missing vanilla adaptation","unknown updater protocol","DLL candidate","empty name metadata retry"}) {var local=scenario;Test("metadata "+local,()=>ImageTests.Run(local));}
+  OfficialSourceTests.Run(Test);
+  OfficialUpdateTests.Run(Test);
   return failed==0?0:1;
  }
 }

@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFrameworks>net48;net8.0</TargetFrameworks><AssemblyName>PCLRestore.Adaptation</AssemblyName><LangVersion>latest</LangVersion><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages><DebugType>none</DebugType><DebugSymbols>false</DebugSymbols></PropertyGroup>
+ <ItemGroup><PackageReference Include="dnlib" Version="4.5.0"/></ItemGroup>
+ <ItemGroup><Compile Include="../Patcher/Adapter.cs" Link="Adapter.cs"/><Compile Include="../Patcher/TypeInjector.cs" Link="TypeInjector.cs"/><EmbeddedResource Include="compatibility.json" LogicalName="PCLRestore.Compatibility.json"/></ItemGroup>
+ <ItemGroup Condition="'$(TargetFramework)'=='net48'"><Reference Include="System.Runtime.Serialization"/></ItemGroup>
+</Project>

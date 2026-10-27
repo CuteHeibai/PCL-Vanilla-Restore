@@ -1,8 +1,9 @@
-param([switch]$LocalOnly)
+param([switch]$LocalOnly, [string]$RuntimeExePath)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $releaseExe = Join-Path $projectRoot 'artifacts\dist\PCL-Restore.bin'
-$metadata = [Reflection.Assembly]::ReflectionOnlyLoad([IO.File]::ReadAllBytes($releaseExe))
+if (-not $RuntimeExePath) { $RuntimeExePath = $releaseExe }
+$metadata = [Reflection.Assembly]::ReflectionOnlyLoad([IO.File]::ReadAllBytes($RuntimeExePath))
 $stream = $metadata.GetManifestResourceStream('PCLRestore.Runtime.dll')
 $buffer = New-Object IO.MemoryStream
 $stream.CopyTo($buffer)
