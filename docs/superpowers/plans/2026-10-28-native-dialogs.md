@@ -4,4 +4,4 @@
 - [x] Add failing tests for the real Hook native bridge, then route all messages through actual ModMain.MyMsgBox with PCL buttons, warning style, wait/result behavior and UI dispatch. Native API signature guard and binary no-system-dialog checks.
 - [x] Full100-check build, independent review, privacy and real official ZIP consecutive-generation restoration.
 - [x] Terra verify native current-version notice/confirmation and real official ZIP download, local adaptation, PowerShell replace/restart. Exact image/backup/provenance/success/one-EXE checks passed, QA client/world sentinel unchanged, native26.3 installation and recognition after restart passed. Original folder/version selection restored.
-- [ ] Document limits (official latest remains2.99.0.1), publish r7 single EXE and verify public bytes/bootstrap.
+- [x] Document limits (official latest remains2.99.0.1); published r7 single EXE with public-byte/server-digest match and old r2 production bootstrap download/verification twice. Source/main/stable advanced without history/tag rewriting.
