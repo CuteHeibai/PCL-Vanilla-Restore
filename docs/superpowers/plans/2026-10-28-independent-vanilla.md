@@ -16,4 +16,4 @@
 - [x] Add independent WPF window and stable main-window button, async install/progress/cancellation. Keep public Entry bridge simple and no new user dependencies.
 - [x] Add adaptation tests for native-method changes→independent mode, host changes→reject, inherited runtime, and mode metadata. Implement fallback without relaxing host contract.
 - [x] Build r4, run existing/new suites, inspect binary/privacy, run actual official independent install. Terra tests independent UI and PCL recognition/game launch where available.
-- [ ] Review code, document exact evidence/boundaries, publish source/r4 EXE and bootstrap stable feed after artifact publication; verify public bytes.
+- [x] Review code, document exact evidence/boundaries, publish source/r4 EXE and bootstrap stable feed after artifact publication; verify public bytes.

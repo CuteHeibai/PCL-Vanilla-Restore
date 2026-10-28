@@ -11,6 +11,6 @@ Current r4 implementation includes independent vanilla download in the single EX
 - [x] Independent review, privacy scan and legacy bootstrap candidate compatibility.
 - [x] Usage, engine, verification and acceptance docs updated.
 
-r4 EXE SHA256: 6bf2ac269ca700070b4057e2a5d2d049200c43cd39474548a07efd5e39b4423d. Release assets must be published before advancing main/stable. Existing r3 users need a manual r4 upgrade to obtain this newly embedded engine; r2's old feed can bootstrap r4. Unknown future host structures and future Mojang schema changes are not promised compatible.
+r4 published as2.99.0.1-r4; source and stable bootstrap feed on main. EXE SHA256: 6bf2ac269ca700070b4057e2a5d2d049200c43cd39474548a07efd5e39b4423d. Public EXE and both server asset digests match the validated image; old r2's production module downloaded and verified public r4 twice. Assets were published before advancing main/stable. Existing r3 users need a manual r4 upgrade to obtain this newly embedded engine; r2's old feed can bootstrap r4. Unknown future host structures and future Mojang schema changes are not promised compatible.
 
 Original user2.8.2 EXE SHA25682d9044513afe207445df7e6142bb6e017335f600a6879b19ec6016ae440ee12 remains untouched. Never distribute QA/runtime data. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested. Old public author emails are not rewritten; new commits use noreply.
