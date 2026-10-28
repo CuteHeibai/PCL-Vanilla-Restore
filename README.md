@@ -10,9 +10,9 @@
 
 r3 起跟随官方正式版更新：查询官方 `最新正式版.zip` 的提交，下载对应固定提交的原包，在本机恢复 MC 下载、便携路径与下一次自动恢复能力，校验通过后再替换和重启。适配引擎、运行库与 dnlib 均嵌在 EXE 中，无需 SDK、编译器或配套 DLL。
 
-r5 在主窗口右下角提供 **独立原版下载**。界面和安装规划独立于原下载页，版本列表、镜像选择与文件下载则直接调用当前 PCL 自带实现：沿用其官方源/BMCLAPI 策略、下载源设置、线程、限速、重试与文件校验。生成 PCL 可识别的纯原版版本，不处理账号。安装后返回启动页刷新版本列表，再由 PCL 登录和启动。具体调用见 [docs/pcl-download.md](docs/pcl-download.md)。
+r6 所有下载均在原来的下载标签、原版列表和安装页中完成，沿用 PCL 原生控件、安装任务、官方源/BMCLAPI、下载源设置、线程、限速、重试及校验。没有右下角浮动按钮或单独窗口，也不再附带自建原版安装器。具体调用见 [docs/pcl-download.md](docs/pcl-download.md)。
 
-更新优先恢复原下载页；若只有下载页关键结构变化，而启动、便携路径及更新入口仍兼容，则自动改用独立下载模式。若基础接入也不兼容，拒绝更新并保留当前可用版本，其独立下载入口仍可使用。不能保证任意未来官方结构都能安全接入。官方包仅重新压缩而 EXE 未变化时，记住该次核对结果，避免重复提示下载。
+更新优先直接恢复新版原下载页；若页面逻辑变化导致直接恢复失败，而页面成员、依赖和原有界面资源仍兼容，则从当前可用 EXE 静默迁移已验证的 PCL 原生下载页面代码，在原位置继续工作。若不能安全接回，拒绝更新并保留当前可用版本。不能保证任意未来官方结构都能恢复。官方包仅重新压缩而 EXE 未变化时，记住该次核对结果，避免重复提示下载。
 
 更新暂存、备份、脚本及日志在 `PCL\Cache\Update`。使用 Windows 自带 PowerShell 替换原路径上的唯一启动器 EXE，不生成临时 PCL 更新 EXE。系统策略阻止辅助脚本时会取消更新并保留当前版本。
 
@@ -23,7 +23,7 @@ r5 在主窗口右下角提供 **独立原版下载**。界面和安装规划独
 Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集，以及内置 Windows PowerShell。
 
 ```powershell
-./build.ps1 -PatchRevision 5
+./build.ps1 -PatchRevision 6
 ```
 
 脚本从固定官方提交获取输入，校验其 SHA-256，编译适配工具、嵌入式更新模块和回归检查，输出 `artifacts/dist/PCL 原版下载恢复版.exe` 与供更新通道使用的同内容 `.bin` 文件。
@@ -40,8 +40,8 @@ Windows、.NET SDK 8 或更新版本、.NET Framework 4.8 开发引用程序集�
 
 ## 发布和更新接口
 
-`update/stable.json` 保留给 r2 等旧客户端引导升级到 r5。r3 起正常检查直接查询官方仓库，不等待本仓库为每个官方版本发布成品；已有 r3/r4 的用户需手动下载 r5，才能获得本次下载机制修改。发布标签格式为 `2.99.0.1-r5`；Release 的 `PCL-Restore.bin` 与供用户分发的 EXE 字节相同，用户只需下载和分发 EXE。先发布资产，再更新稳定清单。
+`update/stable.json` 保留给 r2 等旧客户端引导升级到 r6。r3 起正常检查直接查询官方仓库，不等待本仓库为每个官方版本发布成品；已有 r3/r4/r5 用户需手动下载 r6，才能获得本次接入方式修改。发布标签格式为 `2.99.0.1-r6`；Release 的 `PCL-Restore.bin` 与供用户分发的 EXE 字节相同，用户只需下载和分发 EXE。先发布资产，再更新稳定清单。
 
 清单字段：`schemaVersion`、`upstreamVersion`、`patchRevision`、`artifactUrl`、`artifactSha256`，附官方来源提交和原始文件校验值。运行端校验版本、哈希、程序集身份及原版下载/便携路径/更新协议标记后才允许安装。
 
-独立引擎与边界见 [docs/independent-vanilla.md](docs/independent-vanilla.md)，修改说明见 [docs/changes.md](docs/changes.md)，更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)，用户验收步骤见 [docs/acceptance.md](docs/acceptance.md)。可用 Windows PowerShell 执行 `tests/VerifyOfficialAutoRestore.ps1` 验证真实官方原包下载和连续两代本地恢复；`tests/VerifyIndependentInstall.ps1` 在隔离测试目录验证独立安装；`tests/VerifyPublishedRelease.ps1` 检查旧客户端引导通道。上游使用说明与分发要求见 [LICENCE](LICENCE)。
+静默备用恢复与边界见 [docs/independent-vanilla.md](docs/independent-vanilla.md)，修改说明见 [docs/changes.md](docs/changes.md)，更新模块与回归覆盖详见 [docs/updater-report.md](docs/updater-report.md)，实际验收记录见 [docs/verification.md](docs/verification.md)，用户验收步骤见 [docs/acceptance.md](docs/acceptance.md)。可用 Windows PowerShell 执行 `tests/VerifyOfficialAutoRestore.ps1` 验证真实官方原包下载和连续两代本地恢复；`tests/VerifyPublishedRelease.ps1` 检查旧客户端引导通道。上游使用说明与分发要求见 [LICENCE](LICENCE)。

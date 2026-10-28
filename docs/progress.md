@@ -1,14 +1,12 @@
-# PCL vanilla restoration progress
+# PCL restoration progress
 
-Current r5 reuses PCL's actual version-list loader, mirror/source helpers and NetFile/FileChecker/LoaderDownload engine. Independent UI and vanilla installation planning remain embedded in the single EXE. Official updates still adapt locally; native-download API or essential-host incompatibility retains the working EXE.
+Current r6 removes the floating button, separate window and custom vanilla installer. Both normal and silent fallback modes use the original PCL download location, BAML/controls and McInstallStart workflow. Direct page restoration remains preferred. Fallback transplants validated native page bodies from the current launcher only when page shape, resources, host and native dependencies match; otherwise retain the working EXE.
 
-- [x] Native official/BMCLAPI source ordering, version/file settings, concurrency/rate/splitting/retry/cancellation reuse.
-- [x] 111 full-build checks: 26 binary, 12 adapter, 73 updater/installer; zero warnings/errors.
-- [x] Actual native official-preferred1.8.9 and BMCLAPI-preferred1.5.2 installations. GUI26.3 installation and final-byte26.3 CLI installation. Source settings restored after probes.
-- [x] Final-byte GUI/list/status smoke; actual official ZIP adaptation and consecutive generation adaptation.
-- [x] Shared completed files survive failed batches; version publication and same-name protection retained.
-- [x] Independent review with no remaining P1/P2; final recursive privacy scan clear of known personal/test identifiers and JWT/private-key patterns.
-- [x] Original user2.8.2 untouched; production remains one EXE with generated data under ExeDir/PCL and selected game output.
-- [x] Published2.99.0.1-r5; both server asset digests and redownloaded public EXE match final SHA256. Old r2 production updater downloaded public r5 through main/stable and verified twice. Assets were published before advancing main/stable.
+- [x] Failing then passing original-location, missing-dependency, changed-resource and generic-member regression tests.
+- [x] Cross-version native-fallback remapping without old self AssemblyRefs; output reread and donor-method verification; fingerprints for every transplanted method.
+- [x] Full build: 26 binary +17 adaptation +52 updater =95 checks, zero warnings/errors. Obsolete custom-installer tests and probes removed along with that production code.
+- [x] Independent review: generic member attributes guard fixed and verified; no remaining reproducible findings.
+- [ ] Real official package/two-generation probes, privacy scan, normal/fallback UI and actual native installation.
+- [ ] Documentation, r6 single-EXE publication and public-byte/bootstrap verification.
 
-Final EXE SHA256: 8befb2376c0bf941688819b6fde31afcf760525f115dc4767120977e8acbba04. Existing r3/r4 users need a manual r5 upgrade for this changed engine. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested; r4 game-menu/component evidence is historical. Unknown future host/API structures retain the current usable version. Old public author emails are not rewritten; new commits use noreply. Never distribute QA/runtime data.
+Candidate SHA256:0994f51e5825424c460cb7eaf18874a4b10a345cf5fd3258bf188aef3af96262. Existing r3/r4/r5 users need manual r6 replacement for this changed integration. Fresh Microsoft authorization, forced refresh, power loss and another computer's complete workflow remain untested. Never distribute QA/runtime data or rewrite old public history.

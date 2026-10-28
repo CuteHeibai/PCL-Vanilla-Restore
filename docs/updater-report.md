@@ -1,5 +1,13 @@
 # 官方更新与本地恢复
 
+## r6 原位置静默恢复
+
+r6 不再使用 r4/r5 独立窗口或自建安装规划。直接恢复失败时，在严格的主机/API、页面成员和原有资源检查后，从当前可用 EXE 迁移已恢复的原生下载页面代码，映射到候选定义。原位置、界面、原版限制及原生 McInstallStart 路径均验证；输出重读后比对供体页面所有方法，继续携带下一次恢复能力。
+
+候选原生下载 API、页面资源或依赖不匹配则不替换当前程序。模式记录为 native/native-fallback，仅供日志和适配记录使用，不在界面增加入口。网络错误的重试/切源仍由 PCL 原生引擎处理。原 PowerShell 更新事务、单 EXE 和便携路径约束保持。
+
+以下 r3/r4/r5 内容为对应阶段记录，当前行为以此节及 [independent-vanilla.md](independent-vanilla.md) 为准。
+
 ## r5 原生下载契约
 
 独立安装界面继续内嵌，但清单、镜像及文件下载改用候选官方程序自己的 PCL API。适配前后检查三个候选源函数、列表 LoaderTask/结果字段、NetFile/LoaderDownload、完整 WaitForExit 签名，以及内嵌 MeloongCore 的 FileChecker 成员；缺失或不兼容即拒绝更新。原下载页不兼容但这些 API 和基础接入仍兼容时可继续使用 independent 模式。镜像方法体可随官方策略变化，无需维护第二套镜像地址替换规则。

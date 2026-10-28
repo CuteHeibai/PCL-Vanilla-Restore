@@ -8,8 +8,6 @@ class Program {
  static void Reject(Action f) { try {f();} catch(InvalidDataException) {return;} throw new Exception("invalid input accepted"); }
  static void Test(string name, Action test) { try {test();Console.WriteLine("PASS "+name);}catch(Exception e){failed++;Console.WriteLine("FAIL "+name+": "+e.Message);} }
  static int Main(string[] args) {
-  if(args.Length==1&&args[0]=="--pcl-only"){PclTransportTests.Run(Test);return failed==0?0:1;}
-  if(args.Length==1&&args[0]=="--vanilla-only"){VanillaTests.Run(Test);return failed==0?0:1;}
   Test("valid adapted feed and revision",()=>{var f=UpdateCore.ParseFeed(FeedJson()); Assert(f.Version==new Version(2,8,2,0)&&f.Revision==2,"wrong feed"); Assert(UpdateCore.IsNewer(f,new Version(2,8,2,0),1),"revision ignored"); Assert(!UpdateCore.IsNewer(f,new Version(2,8,3,0),0),"downgrade allowed");});
   Test("reject schema",()=>Reject(()=>UpdateCore.ParseFeed(FeedJson(schema:"2"))));
   Test("reject short version",()=>Reject(()=>UpdateCore.ParseFeed(FeedJson(version:"2.8.2"))));
@@ -28,8 +26,6 @@ class Program {
   foreach(var scenario in new[]{"valid adapted image","wrong assembly version","wrong assembly identity","missing adaptation marker","wrong patch revision","missing vanilla adaptation","unknown updater protocol","DLL candidate","empty name metadata retry"}) {var local=scenario;Test("metadata "+local,()=>ImageTests.Run(local));}
   OfficialSourceTests.Run(Test);
   OfficialUpdateTests.Run(Test);
-  VanillaTests.Run(Test);
-  PclTransportTests.Run(Test);
   return failed==0?0:1;
  }
 }

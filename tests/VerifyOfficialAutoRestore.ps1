@@ -1,4 +1,4 @@
-﻿param([string]$ExePath, [int]$PatchRevision = 5)
+﻿param([string]$ExePath, [int]$PatchRevision = 6)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $ExePath) { $ExePath = Join-Path $projectRoot 'artifacts\dist\PCL-Restore.bin' }

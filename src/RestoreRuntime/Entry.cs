@@ -35,7 +35,6 @@ namespace PCLRestore.Runtime {
    }catch{return false;}
   }
   public static object CheckUpdates(object[] args) {return Check(false);}
-  public static object AttachDownloader(object[] args) {if(args!=null&&args.Length==1&&args[0] is Window){VanillaWindow.Attach((Window)args[0]);return true;}return false;}
   public static object CheckSilently(object[] args) {return Check(true);}
   static object Check(bool silent) {
    if(exe==null){if(!silent)Message("更新模块尚未就绪。");return false;}
@@ -55,10 +54,10 @@ namespace PCLRestore.Runtime {
     }
     OfficialRelease release;
     try {release=OfficialSource.ParseCommitList(ReadFeed(OfficialSource.CommitApiUrl));}catch(Exception e){Log("无法查询官方更新："+e.Message);if(!silent)Message("暂时无法获取官方正式版更新，请稍后重试。");return false;}
-    if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message(vanillaMode=="independent"?"当前已是最新官方正式版，独立原版下载已启用。请使用窗口右下角入口。":"当前已是最新官方正式版，原版下载恢复功能已启用，并内置独立下载入口。");return false;}
+    if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message("当前已是最新官方正式版，原版下载恢复功能已启用。");return false;}
     string noUpdateState=Path.Combine(root,"unchanged-official.json"),installedSha=UpdateCore.Hash(exe);
     if(OfficialUpdate.IsKnownNoUpdate(noUpdateState,release.Commit,installedSha)){if(!silent)Message("已核对此官方安装包，没有更新的可用版本，当前启动器保持不变。");return false;}
-    if((!silent||settings.PromptBeforeInstall)&&!Confirm("官方正式版安装包已更新。\n"+release.Message+"\n是否下载并适配？原下载页无法恢复时将使用独立原版下载。\n基础接入校验通过后才替换并重启；无法接入时保留当前版本。"))return false;
+    if((!silent||settings.PromptBeforeInstall)&&!Confirm("官方正式版安装包已更新。\n"+release.Message+"\n是否下载并恢复原版下载功能？\n验证通过后才替换并重启；无法恢复时保留当前版本。"))return false;
     string archive=Path.Combine(root,"official-"+release.Commit+".zip.bin"),raw=Path.Combine(root,"official-source.bin"),candidate=Path.Combine(root,"candidate.bin");
     Download(release.ArchiveUrl,archive,512L*1024*1024);OfficialSource.ExtractOriginal(archive,raw);
     Version incoming=OfficialUpdate.InspectVersion(raw);string incomingSha=UpdateCore.Hash(raw);

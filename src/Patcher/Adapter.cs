@@ -71,6 +71,11 @@ internal sealed class Adapter
         install.Body.Instructions.Insert(0,Instruction.Create(OpCodes.Ldarg_0));
         install.Body.Instructions.Insert(1,Instruction.Create(OpCodes.Call,Hook("VanillaOnly")));
     }
+    public void RestoreNativePages(byte[] donor)
+    {
+        foreach(var method in module.GetTypes().Where(NativePageFallback.Page).SelectMany(t=>t.Methods).Where(m=>m.HasBody)) Track(method);
+        NativePageFallback.Restore(module,donor);
+    }
     public void PortablePaths()
     {
         var init=Method("PCL.ModBase",".cctor"); Track(init);
@@ -149,7 +154,7 @@ internal sealed class Adapter
         foreach(var m in module.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody))
         foreach(var i in m.Body.Instructions.Where(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="正式版 "+version))
         { Track(m); i.Operand="正式版 "+version+" · 原版下载恢复版 r"+revision; }
-        var profile=new AdaptationProfile{upstreamVersion=version,patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit=sourceCommit,sourceExeSha256=sourceHash,methodFingerprints=before,officialAutoRestore=updater,adapterProtocol=1,independentVanilla=true,vanillaMode=mode};
+        var profile=new AdaptationProfile{upstreamVersion=version,patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit=sourceCommit,sourceExeSha256=sourceHash,methodFingerprints=before,officialAutoRestore=updater,adapterProtocol=1,independentVanilla=false,inlineVanillaFallback=true,vanillaMode=mode};
         module.Resources.Add(new EmbeddedResource("PCLRestore.Profile.json",JsonData.Write(profile),ManifestResourceAttributes.Public));
     }
 }

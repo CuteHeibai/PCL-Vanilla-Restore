@@ -17,6 +17,7 @@ public sealed class AdaptationProfile {
  [DataMember]public int patchRevision;
  [DataMember]public bool vanillaDownload,portableTemp,officialAutoRestore;
  [DataMember]public bool independentVanilla;
+ [DataMember]public bool inlineVanillaFallback;
  [DataMember]public string vanillaMode="native";
  [DataMember]public int updaterProtocol,adapterProtocol;
  [DataMember]public string sourceCommit="",sourceExeSha256="";

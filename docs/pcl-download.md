@@ -1,20 +1,18 @@
-# 直接复用 PCL 下载实现
+# PCL 原生下载界面和实现
 
-r5 按用户要求复用宿主 PCL 的真实下载代码。独立窗口只负责选择版本与规划纯原版安装，不复制一套网络引擎或镜像排序算法。
+r6 在原下载位置恢复完整原生流程。与 r5 不同，没有自建安装规划或单独窗口。
 
-| 功能 | 调用的 PCL 实现 |
+| 功能 | 使用的 PCL 实现 |
 | --- | --- |
-| 版本列表与来源调度 | `ModDownload.DlClientListLoader`，读取 `DlClientListResult.Value/SourceName` |
-| 客户端、元数据、索引、日志候选源 | `DlSourceLauncherOrMetaGet` |
-| 库候选源 | `DlSourceLibraryGet` |
-| 资源 objects 候选源 | `DlSourceAssetsGet` |
-| 文件任务、校验与批量下载 | `ModNet.NetFile`、`MeloongCore.FileChecker`、`ModNet.LoaderDownload` |
-| 等待、取消、进度 | 原生 `WaitForExit`、`Cancel`、`Progress` |
+| 导航、列表、选版本、命名和安装按钮 | `PageDownloadLeft`、`PageDownloadInstall` 及原 BAML/控件 |
+| 版本列表与来源调度 | `ModDownload.DlClientListLoader` |
+| 安装请求与任务 | `ModDownloadLib.McInstallRequest`、`McInstallStart` |
+| 元数据/客户端候选源 | `DlSourceLauncherOrMetaGet` |
+| 库、资源候选源 | `DlSourceLibraryGet`、`DlSourceAssetsGet` |
+| 分段、校验、并发、限速、重试、取消 | 原生 `NetFile`、`FileChecker`、`LoaderDownload` 及 PCL 任务体系 |
 
-版本列表使用 `ToolDownloadVersion`，文件源使用 `ToolDownloadSource`，分别遵守 PCL 的镜像优先、自适应、官方优先设置。当前 PCL 的列表来自 Mojang/BMCLAPI；文件候选包含官方和 BMCLAPI 的 launcher/meta、maven/libraries、assets 映射。最终切源与复用由原生引擎处理；“镜像优先”不表示每个字节都一定来自镜像。
+版本列表使用 `ToolDownloadVersion`，文件源使用 `ToolDownloadSource`，遵守 PCL 的镜像优先、自适应和官方优先设置。当前候选策略包含 Mojang 官方源和 BMCLAPI 的 launcher/meta、maven/libraries、assets 映射；实际回退和文件复用由原生引擎处理。“镜像优先”不保证每个字节都来自镜像。
 
-全局并发、限速、分段、重试及 CDN 处理沿用 PCL。共享依赖一次提交给原生批量任务，保留真实 libraries/assets 路径以支持其已有文件复用。元数据、客户端等分步任务也使用同一引擎。
+直接恢复失败时，备用恢复把当前可用 EXE 的已验证页面代码映射回候选原页面定义；安装仍走候选的原生 `McInstallStart`。接入兼容条件见 [independent-vanilla.md](independent-vanilla.md)。没有运行时的备用开关或额外下载入口。
 
-实现对照了固定原包 2.99.0.1 的实际方法与上游提交 `93ede5d9e638c99fcec853a9ba1eecd91ceee7f5` 的 [ModDownload.vb](https://github.com/Meloong-Git/PCL/blob/93ede5d9e638c99fcec853a9ba1eecd91ceee7f5/Plain%20Craft%20Launcher%202/Modules/Minecraft/ModDownload.vb) 和 [ModNet.vb](https://github.com/Meloong-Git/PCL/blob/93ede5d9e638c99fcec853a9ba1eecd91ceee7f5/Plain%20Craft%20Launcher%202/Modules/Base/ModNet.vb)。适配时检查原生 API 和内嵌 FileChecker 的签名；接口不兼容就保留旧版。候选源来自可信宿主策略，要求 HTTPS，不另设固定镜像域名列表阻止官方新增镜像。
-
-验证包含真实官方优先 1.8.9、BMCLAPI 优先 1.5.2、GUI 26.3 安装，以及源选择、校验、取消、已完成共享文件保留、API 变化拒绝等回归。逐项证据与边界见 [verification.md](verification.md)。
+实现依据固定原包 2.99.0.1，并对照提交 `93ede5d9e638c99fcec853a9ba1eecd91ceee7f5` 的 [ModDownload.vb](https://github.com/Meloong-Git/PCL/blob/93ede5d9e638c99fcec853a9ba1eecd91ceee7f5/Plain%20Craft%20Launcher%202/Modules/Minecraft/ModDownload.vb) 和 [ModNet.vb](https://github.com/Meloong-Git/PCL/blob/93ede5d9e638c99fcec853a9ba1eecd91ceee7f5/Plain%20Craft%20Launcher%202/Modules/Base/ModNet.vb)。历史 r5 的独立窗口和测试探针已移除，对应历史证据仍保存在 verification.md。
