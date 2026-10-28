@@ -6,6 +6,7 @@ internal static class PclDownloadContract {
  static bool Sequence(TypeSig type,string element)=>type.FullName=="System.Collections.Generic.IEnumerable`1<"+element+">";
  static void Require(bool ok){if(!ok)throw new InvalidDataException("PCL 下载引擎接口不兼容，保留当前版本。");}
  internal static void Check(ModuleDefMD module){
+  var dialogs=Type(module,"PCL.ModMain");Require(dialogs.Methods.Count(m=>m.Name=="MyMsgBox"&&m.IsPublic&&m.IsStatic&&m.MethodSig.RetType.ElementType==ElementType.I4&&m.MethodSig.Params.Select(p=>p.FullName).SequenceEqual(new[]{"System.String","System.String","System.String","System.String","System.String","System.Boolean","System.Boolean","System.Boolean","System.Action","System.Action","System.Action"}))==1);
   var source=Type(module,"PCL.ModDownload");
   foreach(string name in new[]{"DlSourceAssetsGet","DlSourceLibraryGet","DlSourceLauncherOrMetaGet"})Require(source.Methods.Count(m=>m.Name==name&&m.IsPublic&&m.IsStatic&&m.MethodSig.Params.Count==1&&m.MethodSig.Params[0].ElementType==ElementType.String&&Sequence(m.MethodSig.RetType,"System.String"))==1);
   var catalog=source.Fields.SingleOrDefault(f=>f.Name=="DlClientListLoader"&&f.IsPublic&&f.IsStatic);var catalogSig=catalog?.FieldSig.Type as GenericInstSig;Require(catalogSig!=null&&catalogSig.GenericType.FullName=="PCL.ModLoader/LoaderTask`2"&&catalogSig.GenericArguments.Count==2&&catalogSig.GenericArguments[0].ElementType==ElementType.String&&catalogSig.GenericArguments[1].FullName=="PCL.ModDownload/DlClientListResult");

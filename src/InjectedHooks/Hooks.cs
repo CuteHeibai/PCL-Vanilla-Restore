@@ -51,7 +51,22 @@ namespace PCLRestore
         public static void Worker(object method)
         {
             try { Call((string)method, new object[0]); }
-            catch (Exception) { MessageBox.Show("暂时无法检查更新，请稍后重试。", "检查更新"); }
+            catch (Exception)
+            {
+                if (Application.Current != null) Application.Current.Dispatcher.BeginInvoke(new Action(ReportUpdateFailure));
+            }
+        }
+        public static void ReportUpdateFailure()
+        {
+            NativeMessage("暂时无法检查更新，请稍后重试。", "检查更新", "确定", "", true, Assembly.GetEntryAssembly());
+        }
+        public static int NativeMessage(string text, string title, string first, string second, bool warning, Assembly host)
+        {
+            Type owner = host.GetType("PCL.ModMain", true);
+            Type[] signature = { typeof(string), typeof(string), typeof(string), typeof(string), typeof(string), typeof(bool), typeof(bool), typeof(bool), typeof(Action), typeof(Action), typeof(Action) };
+            MethodInfo dialog = owner.GetMethod("MyMsgBox", BindingFlags.Public | BindingFlags.Static, null, signature, null);
+            if (dialog == null || dialog.ReturnType != typeof(int)) throw new InvalidDataException("PCL 原生提示窗口接口不兼容。");
+            return (int)dialog.Invoke(null, new object[] { text, title, first, second, "", warning, true, true, null, null, null });
         }
         public static object Get(object obj, string name)
         {

@@ -37,7 +37,7 @@ namespace PCLRestore.Runtime {
   public static object CheckUpdates(object[] args) {return Check(false);}
   public static object CheckSilently(object[] args) {return Check(true);}
   static object Check(bool silent) {
-   if(exe==null){if(!silent)Message("更新模块尚未就绪。");return false;}
+   if(exe==null){if(!silent)Message("更新模块尚未就绪。",true);return false;}
    if(Interlocked.CompareExchange(ref busy,1,0)!=0){if(!silent)Message("正在检查或安装更新，请稍候。");return false;}
    FileStream gate=null;bool helperLaunched=false;string ownSession=null;
    try {
@@ -53,7 +53,7 @@ namespace PCLRestore.Runtime {
      File.Delete(pendingPath);
     }
     OfficialRelease release;
-    try {release=OfficialSource.ParseCommitList(ReadFeed(OfficialSource.CommitApiUrl));}catch(Exception e){Log("无法查询官方更新："+e.Message);if(!silent)Message("暂时无法获取官方正式版更新，请稍后重试。");return false;}
+    try {release=OfficialSource.ParseCommitList(ReadFeed(OfficialSource.CommitApiUrl));}catch(Exception e){Log("无法查询官方更新："+e.Message);if(!silent)Message("暂时无法获取官方正式版更新，请稍后重试。",true);return false;}
     if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message("当前已是最新官方正式版，原版下载恢复功能已启用。");return false;}
     string noUpdateState=Path.Combine(root,"unchanged-official.json"),installedSha=UpdateCore.Hash(exe);
     if(OfficialUpdate.IsKnownNoUpdate(noUpdateState,release.Commit,installedSha)){if(!silent)Message("已核对此官方安装包，没有更新的可用版本，当前启动器保持不变。");return false;}
@@ -86,7 +86,7 @@ namespace PCLRestore.Runtime {
     var app=Application.Current;if(app==null)throw new InvalidOperationException("启动器窗口尚未就绪。");
     app.Dispatcher.BeginInvoke(new Action(()=>app.Shutdown()));
     return true;
-   }catch(Exception e){Log("官方更新/本地恢复未完成："+e.Message);if(!silent)Message("官方更新或自动恢复未完成，当前启动器保持不变。\n"+e.Message);return false;}
+   }catch(Exception e){Log("官方更新/本地恢复未完成："+e.Message);if(!silent)Message("官方更新或自动恢复未完成，当前启动器保持不变。\n"+e.Message,true);return false;}
    finally {
     if(gate!=null)gate.Dispose();
     if(!helperLaunched&&ownSession!=null){try{string path=Path.Combine(root,"pending.json");if(File.Exists(path)&&UpdateCore.Str(UpdateCore.Json(File.ReadAllText(path)),"session")==ownSession)File.Delete(path);}catch{}}
@@ -99,8 +99,9 @@ namespace PCLRestore.Runtime {
   }
   static void Log(string value){try{if(root!=null){Directory.CreateDirectory(root);File.AppendAllText(Path.Combine(root,"update.log"),DateTime.UtcNow.ToString("o")+" "+value+Environment.NewLine);}}catch{}}
   static T OnUi<T>(Func<T> work){var app=Application.Current;return app!=null&&!app.Dispatcher.CheckAccess()?app.Dispatcher.Invoke(work):work();}
-  static void Message(string text){OnUi(()=>MessageBox.Show(text,"PCL 适配版更新",MessageBoxButton.OK,MessageBoxImage.Information));}
-  static bool Confirm(string text){return OnUi(()=>MessageBox.Show(text,"PCL 适配版更新",MessageBoxButton.YesNo,MessageBoxImage.Question))==MessageBoxResult.Yes;}
+  static int NativeMessage(string text,string first,string second,bool warning){return OnUi(()=>Convert.ToInt32(Assembly.GetEntryAssembly().GetType("PCLRestore.Hooks",true).GetMethod("NativeMessage").Invoke(null,new object[]{text,"检查更新",first,second,warning,Assembly.GetEntryAssembly()})));}
+  static void Message(string text,bool warning=false){NativeMessage(text,"确定","",warning);}
+  static bool Confirm(string text){return NativeMessage(text,"下载并更新","取消",false)==1;}
   static HttpWebResponse Request(string address) {
    for(int redirects=0;redirects<=5;redirects++) {
     Uri uri;if(!Uri.TryCreate(address,UriKind.Absolute,out uri)||uri.Scheme!=Uri.UriSchemeHttps)throw new InvalidDataException("更新地址必须使用 HTTPS。");

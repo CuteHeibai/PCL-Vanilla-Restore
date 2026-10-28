@@ -36,7 +36,10 @@ using(var runtime=ModuleDefMD.Load(runtimeResource.CreateReader().ReadBytes((int
  Check(!runtime.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.VanillaWindow"||t.FullName=="PCLRestore.Runtime.VanillaInstaller"),"no separate download window or custom installer is shipped");
  Check(Calls(Method(actual,"PCL.PageDownloadInstall","StartInstall"),"PCL.ModDownloadLib","McInstallStart"),"original page uses native PCL installation workflow");
  Check(!Method(actual,"PCLRestore.Hooks","Brand").Body.Instructions.Any(i=>Equals(i.Operand,"AttachDownloader")),"no floating download button is attached");
+ Check(Calls(Method(runtime,"PCLRestore.Runtime.Entry","Message"),"PCLRestore.Runtime.Entry","NativeMessage")&&Calls(Method(runtime,"PCLRestore.Runtime.Entry","Confirm"),"PCLRestore.Runtime.Entry","NativeMessage"),"update notices and confirmations use the native dialog bridge");
+ Check(!runtime.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.Operand is IMethod c&&c.DeclaringType.FullName=="System.Windows.MessageBox"),"runtime has no system-style message boxes");
 }
+Check(!actual.GetTypes().Single(t=>t.FullName=="PCLRestore.Hooks").Methods.Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.Operand is IMethod c&&c.DeclaringType.FullName=="System.Windows.MessageBox"),"hook failure messages use PCL style");
 Check(Calls(Method(actual,"PCL.FormMain","FormMain_Loaded"),"PCLRestore.Hooks","Brand"),"third-party branding is connected to main window");
 Check(!actual.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="Latest.exe"),"no second cached launcher EXE");
 var originalOAuth=original.GetTypes().Single(t=>t.FullName=="PCL.ModSecret").Fields.Single(f=>f.Name=="OAuthClientId");
