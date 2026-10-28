@@ -16,6 +16,8 @@ public sealed class AdaptationProfile {
  [DataMember]public string upstreamVersion="";
  [DataMember]public int patchRevision;
  [DataMember]public bool vanillaDownload,portableTemp,officialAutoRestore;
+ [DataMember]public bool independentVanilla;
+ [DataMember]public string vanillaMode="native";
  [DataMember]public int updaterProtocol,adapterProtocol;
  [DataMember]public string sourceCommit="",sourceExeSha256="";
  [DataMember]public Dictionary<string,string> methodFingerprints=new Dictionary<string,string>();

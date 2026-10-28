@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace PCLRestore.Runtime {
- internal sealed class PreparedOfficialImage {internal string Candidate,Sha,SourceSha,Commit;internal Version Version;}
+ internal sealed class PreparedOfficialImage {internal string Candidate,Sha,SourceSha,Commit,Mode;internal Version Version;}
  internal static class OfficialUpdate {
   internal static bool IsKnownNoUpdate(string state,string commit,string installedSha) {
    try {var data=UpdateCore.Json(File.ReadAllText(state));return String.Equals(UpdateCore.Str(data,"commit"),commit,StringComparison.OrdinalIgnoreCase)&&String.Equals(UpdateCore.Str(data,"installedSha256"),installedSha,StringComparison.OrdinalIgnoreCase);}catch{return false;}
@@ -36,8 +36,8 @@ namespace PCLRestore.Runtime {
    try {File.WriteAllBytes(temporary,image.Image);if(File.Exists(candidate))File.Delete(candidate);File.Move(temporary,candidate);}finally{if(File.Exists(temporary))File.Delete(temporary);}
    var feed=new Feed{Version=image.Version,Revision=revision,Sha=image.Sha256,Url="https://raw.githubusercontent.com/Meloong-Git/PCL/"+commit+"/"};
    UpdateCore.VerifyImage(candidate,feed,AssemblyName.GetAssemblyName(donor).Name);
-   Entry.WriteJson(Path.Combine(Path.GetDirectoryName(candidate),"adaptation.json"),new{sourceCommit=commit,sourceExeSha256=image.SourceSha256,adaptedSha256=image.Sha256,upstreamVersion=image.Version.ToString(),adapterRevision=revision});
-   return new PreparedOfficialImage{Candidate=candidate,Sha=image.Sha256,SourceSha=image.SourceSha256,Version=image.Version,Commit=commit};
+   Entry.WriteJson(Path.Combine(Path.GetDirectoryName(candidate),"adaptation.json"),new{sourceCommit=commit,sourceExeSha256=image.SourceSha256,adaptedSha256=image.Sha256,upstreamVersion=image.Version.ToString(),adapterRevision=revision,vanillaMode=image.Mode});
+   return new PreparedOfficialImage{Candidate=candidate,Sha=image.Sha256,SourceSha=image.SourceSha256,Version=image.Version,Commit=commit,Mode=image.Mode};
   }
  }
 }

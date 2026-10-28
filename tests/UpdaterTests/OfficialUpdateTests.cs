@@ -33,7 +33,7 @@ internal static class OfficialUpdateTests {
   }));
   test("incompatible official structure leaves current image and candidate intact",()=>InDirectory((exe,root)=>{
    string raw=Path.Combine(root,"official-source.bin"),candidate=Path.Combine(root,"candidate.bin");File.WriteAllText(candidate,"previous candidate");string before=UpdateCore.Hash(exe);
-   using(var m=ModuleDefMD.Load("vendor/PCL-2.99.0.1.exe")){foreach(var t in m.GetTypes())if(t.FullName=="PCL.PageDownloadInstall")foreach(var method in t.Methods)if(method.Name=="BtnStart_Click")method.Body.Instructions.Insert(0,Instruction.Create(OpCodes.Nop));m.Write(raw);}
+   using(var m=ModuleDefMD.Load("vendor/PCL-2.99.0.1.exe")){foreach(var t in m.GetTypes())if(t.FullName=="PCL.Application")foreach(var method in t.Methods)if(method.Name=="Application_Startup")method.Body.Instructions.Insert(0,Instruction.Create(OpCodes.Nop));m.Write(raw);}
    Reject(()=>OfficialUpdate.Prepare(raw,exe,candidate,3,Commit));Assert(UpdateCore.Hash(exe)==before&&File.ReadAllText(candidate)=="previous candidate","failed patch modified current files");
   }));
   test("automatic adapter rejects output outside portable update cache",()=>InDirectory((exe,root)=>Reject(()=>OfficialUpdate.Prepare(Path.Combine(root,"raw.bin"),exe,Path.Combine(Path.GetDirectoryName(exe),"bad.bin"),3,Commit))));

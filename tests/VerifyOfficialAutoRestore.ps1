@@ -1,4 +1,4 @@
-param([string]$ExePath)
+﻿param([string]$ExePath, [int]$PatchRevision = 4)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 if (-not $ExePath) { $ExePath = Join-Path $projectRoot 'artifacts\dist\PCL-Restore.bin' }
@@ -30,11 +30,11 @@ $candidate = Join-Path $cache 'candidate.bin'
 $null = $entry.GetMethod('Download', $hidden).Invoke($null, @([string]$url, [string]$archive, [long]536870912))
 $null = $sourceType.GetMethod('ExtractOriginal', $hidden).Invoke($null, @([string]$archive, [string]$raw))
 $before = (Get-FileHash -LiteralPath $donor -Algorithm SHA256).Hash
-$prepared = $updateType.GetMethod('Prepare', $hidden).Invoke($null, @([string]$raw, [string]$donor, [string]$candidate, [int]3, [string]$commit))
+$prepared = $updateType.GetMethod('Prepare', $hidden).Invoke($null, @([string]$raw, [string]$donor, [string]$candidate, [int]$PatchRevision, [string]$commit))
 if ((Get-FileHash -LiteralPath $donor -Algorithm SHA256).Hash -ne $before) { throw 'Staging modified the current executable.' }
 Write-Output ('PASS official download and local restoration: ' + $commit)
 Copy-Item -LiteralPath $candidate -Destination $donor -Force
-$next = $updateType.GetMethod('Prepare', $hidden).Invoke($null, @([string]$raw, [string]$donor, [string]$candidate, [int]3, [string]$commit))
+$next = $updateType.GetMethod('Prepare', $hidden).Invoke($null, @([string]$raw, [string]$donor, [string]$candidate, [int]$PatchRevision, [string]$commit))
 Write-Output 'PASS restored next generation can restore an official package again'
 $loaderNames = @('PCLRestore.Runtime','PCLRestore.Adaptation','dnlib')
 foreach ($name in $loaderNames) {

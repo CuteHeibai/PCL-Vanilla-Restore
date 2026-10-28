@@ -12,7 +12,7 @@ namespace PCLRestore.Runtime {
   // Kept for verifying/bootstrap-upgrading old r2 clients; normal updates use OfficialSource.
   internal const string FeedUrl="https://raw.githubusercontent.com/CuteHeibai/PCL-Vanilla-Restore/main/update/stable.json";
   static readonly object StateGate=new object();
-  static string exe,root,sourceCommit="",sourceSha="";static Version version;static int revision,busy;
+  static string exe,root,sourceCommit="",sourceSha="",vanillaMode="native";static Version version;static int revision,busy;
   public static object Initialize(object[] args) {
    try {
     if(args==null||args.Length!=3||!(args[0] is string)||!(args[1] is string)||!(args[2] is int))return false;
@@ -20,7 +20,8 @@ namespace PCLRestore.Runtime {
     if(r<0||!File.Exists(path)||!String.Equals(Path.GetExtension(path),".exe",StringComparison.OrdinalIgnoreCase))return false;
     lock(StateGate) {
      exe=path;root=Path.Combine(Path.GetDirectoryName(path),"PCL","Cache","Update");version=v;revision=r;sourceCommit="";sourceSha="";
-     using(var stream=Assembly.GetEntryAssembly().GetManifestResourceStream("PCLRestore.Profile.json"))if(stream!=null)using(var reader=new StreamReader(stream)){var profile=UpdateCore.Json(reader.ReadToEnd());sourceCommit=UpdateCore.Str(profile,"sourceCommit");sourceSha=UpdateCore.Str(profile,"sourceExeSha256");}
+     vanillaMode="native";
+     using(var stream=Assembly.GetEntryAssembly().GetManifestResourceStream("PCLRestore.Profile.json"))if(stream!=null)using(var reader=new StreamReader(stream)){var profile=UpdateCore.Json(reader.ReadToEnd());sourceCommit=UpdateCore.Str(profile,"sourceCommit");sourceSha=UpdateCore.Str(profile,"sourceExeSha256");object mode;if(profile.TryGetValue("vanillaMode",out mode)&&mode is string)vanillaMode=(string)mode;}
     }
     return true;
    }catch{return false;}
@@ -34,6 +35,7 @@ namespace PCLRestore.Runtime {
    }catch{return false;}
   }
   public static object CheckUpdates(object[] args) {return Check(false);}
+  public static object AttachDownloader(object[] args) {if(args!=null&&args.Length==1&&args[0] is Window){VanillaWindow.Attach((Window)args[0]);return true;}return false;}
   public static object CheckSilently(object[] args) {return Check(true);}
   static object Check(bool silent) {
    if(exe==null){if(!silent)Message("更新模块尚未就绪。");return false;}
@@ -53,16 +55,16 @@ namespace PCLRestore.Runtime {
     }
     OfficialRelease release;
     try {release=OfficialSource.ParseCommitList(ReadFeed(OfficialSource.CommitApiUrl));}catch(Exception e){Log("无法查询官方更新："+e.Message);if(!silent)Message("暂时无法获取官方正式版更新，请稍后重试。");return false;}
-    if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message("当前已是最新官方正式版，原版下载恢复功能已启用。");return false;}
+    if(String.Equals(release.Commit,sourceCommit,StringComparison.OrdinalIgnoreCase)){if(!silent)Message(vanillaMode=="independent"?"当前已是最新官方正式版，独立原版下载已启用。请使用窗口右下角入口。":"当前已是最新官方正式版，原版下载恢复功能已启用，并内置独立下载入口。");return false;}
     string noUpdateState=Path.Combine(root,"unchanged-official.json"),installedSha=UpdateCore.Hash(exe);
     if(OfficialUpdate.IsKnownNoUpdate(noUpdateState,release.Commit,installedSha)){if(!silent)Message("已核对此官方安装包，没有更新的可用版本，当前启动器保持不变。");return false;}
-    if((!silent||settings.PromptBeforeInstall)&&!Confirm("官方正式版安装包已更新。\n"+release.Message+"\n是否下载并在本机恢复原版 MC 下载功能？\n仅在适配校验通过后替换并重启；不兼容时保留当前版本。"))return false;
+    if((!silent||settings.PromptBeforeInstall)&&!Confirm("官方正式版安装包已更新。\n"+release.Message+"\n是否下载并适配？原下载页无法恢复时将使用独立原版下载。\n基础接入校验通过后才替换并重启；无法接入时保留当前版本。"))return false;
     string archive=Path.Combine(root,"official-"+release.Commit+".zip.bin"),raw=Path.Combine(root,"official-source.bin"),candidate=Path.Combine(root,"candidate.bin");
     Download(release.ArchiveUrl,archive,512L*1024*1024);OfficialSource.ExtractOriginal(archive,raw);
     Version incoming=OfficialUpdate.InspectVersion(raw);string incomingSha=UpdateCore.Hash(raw);
     if(!OfficialUpdate.ShouldInstall(incoming,incomingSha,version,sourceSha)){OfficialUpdate.RememberNoUpdate(noUpdateState,release.Commit,installedSha);if(!silent)Message("官方安装包没有更新的可用版本，当前启动器保持不变。");return false;}
     var prepared=OfficialUpdate.Prepare(raw,exe,candidate,revision,release.Commit);
-    Log("官方原包已在本机适配并验证："+prepared.Version+"，源 "+prepared.SourceSha+"，成品 "+prepared.Sha);
+    Log("官方原包已在本机适配并验证："+prepared.Version+"，模式 "+prepared.Mode+"，源 "+prepared.SourceSha+"，成品 "+prepared.Sha);
     var transaction=new Transaction {Directory=root,Exe=exe,Candidate=candidate,Backup=Path.Combine(root,"previous.bak"),Session=Guid.NewGuid().ToString("N"),ExpectedSha=prepared.Sha,OriginalSha=UpdateCore.Hash(exe),Pid=Process.GetCurrentProcess().Id};
     ownSession=transaction.Session;
     string powershell=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),"System32","WindowsPowerShell","v1.0","powershell.exe");

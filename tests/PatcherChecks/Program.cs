@@ -25,12 +25,17 @@ Check(actual.Resources.Any(r=>r.Name=="PCLRestore.Runtime.dll"),"update runtime 
 Check(Calls(Method(actual,"PCL.ModSecret","UpdateCheckByButton"),"PCLRestore.Hooks","Dispatch"),"manual update routes to embedded official adapter");
 var profileResource=actual.Resources.OfType<EmbeddedResource>().Single(r=>r.Name=="PCLRestore.Profile.json");
 using(var profile=System.Text.Json.JsonDocument.Parse(profileResource.CreateReader().ReadBytes((int)profileResource.Length)))
+ {
  Check(profile.RootElement.GetProperty("officialAutoRestore").GetBoolean(),"official automatic restoration is enabled");
+ Check(profile.RootElement.GetProperty("independentVanilla").GetBoolean(),"independent vanilla fallback is enabled");
+ }
 var runtimeResource=actual.Resources.OfType<EmbeddedResource>().Single(r=>r.Name=="PCLRestore.Runtime.dll");
 using(var runtime=ModuleDefMD.Load(runtimeResource.CreateReader().ReadBytes((int)runtimeResource.Length))) {
  Check(runtime.Resources.Any(r=>r.Name=="PCLRestore.Adaptation.dll"),"next-generation adapter is embedded");
  Check(Calls(Method(runtime,"PCLRestore.Runtime.OfficialUpdate","PrepareCore"),"PCLRestore.Adaptation.SelfAdapter","Adapt"),"official update invokes local restoration before replacement");
+ Check(runtime.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.VanillaInstaller"),"independent installer is embedded");
 }
+Check(Calls(Method(actual,"PCL.FormMain","FormMain_Loaded"),"PCLRestore.Hooks","Brand"),"independent download entry is connected to main window");
 Check(!actual.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="Latest.exe"),"no second cached launcher EXE");
 var originalOAuth=original.GetTypes().Single(t=>t.FullName=="PCL.ModSecret").Fields.Single(f=>f.Name=="OAuthClientId");
 var actualOAuth=actual.GetTypes().Single(t=>t.FullName=="PCL.ModSecret").Fields.Single(f=>f.Name=="OAuthClientId");

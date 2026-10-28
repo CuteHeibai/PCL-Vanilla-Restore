@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "upstreamVersion": "2.99.0.1",
-  "patchRevision": 3,
-  "artifactUrl": "https://github.com/CuteHeibai/PCL-Vanilla-Restore/releases/download/2.99.0.1-r3/PCL-Restore.bin",
-  "artifactSha256": "fdc4027b085845057fa786f9700d3be4d7c62c5883f87ff1bfbb8b62aa67c51e",
+  "patchRevision": 4,
+  "artifactUrl": "https://github.com/CuteHeibai/PCL-Vanilla-Restore/releases/download/2.99.0.1-r4/PCL-Restore.bin",
+  "artifactSha256": "6bf2ac269ca700070b4057e2a5d2d049200c43cd39474548a07efd5e39b4423d",
   "sourceCommit": "93ede5d9e638c99fcec853a9ba1eecd91ceee7f5",
   "sourceExeSha256": "0db34e19d9eeb6d496d20fabe786ec16bbd36ba6b0ccdc8d29cb7e909c114397"
 }

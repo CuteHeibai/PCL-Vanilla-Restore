@@ -73,6 +73,7 @@ namespace PCLRestore
         public static void Brand(object window)
         {
             ((Window)window).Title = "PCL 原版下载恢复版";
+            Call("AttachDownloader", new object[] { window });
             object logo = Get(window, "LabTitleLogo");
             if (logo != null)
             {

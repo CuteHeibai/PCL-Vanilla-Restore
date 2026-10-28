@@ -141,7 +141,7 @@ internal sealed class Adapter
             SetBody(target,Instruction.Create(OpCodes.Ldstr,pair.Item2),Instruction.Create(OpCodes.Call,Hook("Dispatch")),Instruction.Create(OpCodes.Ret));
         }
     }
-    public void Finish(bool updater)
+    public void Finish(bool updater,string mode="native")
     {
         AppendHook(Method("PCL.FormMain","FormMain_Loaded"),"Brand");
         AppendHook(Method("PCL.PageOtherAbout","PageOtherAbout_Loaded"),"About");
@@ -149,7 +149,7 @@ internal sealed class Adapter
         foreach(var m in module.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody))
         foreach(var i in m.Body.Instructions.Where(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="正式版 "+version))
         { Track(m); i.Operand="正式版 "+version+" · 原版下载恢复版 r"+revision; }
-        var profile=new AdaptationProfile{upstreamVersion=version,patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit=sourceCommit,sourceExeSha256=sourceHash,methodFingerprints=before,officialAutoRestore=updater,adapterProtocol=1};
+        var profile=new AdaptationProfile{upstreamVersion=version,patchRevision=revision,vanillaDownload=true,portableTemp=true,updaterProtocol=updater?1:0,sourceCommit=sourceCommit,sourceExeSha256=sourceHash,methodFingerprints=before,officialAutoRestore=updater,adapterProtocol=1,independentVanilla=true,vanillaMode=mode};
         module.Resources.Add(new EmbeddedResource("PCLRestore.Profile.json",JsonData.Write(profile),ManifestResourceAttributes.Public));
     }
 }

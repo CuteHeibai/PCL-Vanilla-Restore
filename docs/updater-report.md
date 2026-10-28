@@ -47,3 +47,11 @@ powershell.exe -NoProfile -NonInteractive -File tests/VerifyOfficialAutoRestore.
 ```
 
 后者从实时官方接口下载原包，调用真实嵌入式模块适配，验证下一代仍可再次适配，且依赖仅从内存加载。它只写入 `artifacts/official-integration`，不启动用户游戏。真实界面替换验收及边界见 [verification.md](verification.md)。
+
+## r4 independent fallback
+
+r4 always exposes the embedded independent installer through the main-window button. The original contract is split into native-download and essential-host checks. Native restoration remains preferred; only a native mismatch can fall back to independent mode after every host/path/update anchor still matches. A host mismatch retains the currently working EXE. Both output modes inherit the runtime/adapter and downloader. `vanillaMode` is recorded in the profile and adaptation journal; manual current-version messages distinguish independent mode.
+
+The new engine consumes official Mojang metadata with mandatory SHA1 validation, Windows library/native rules and asset/logging plans, stages below ExeDir/PCL/Cache/Vanilla, and publishes standard versions plus a pure component manifest. It never handles account tokens. See independent-vanilla.md for finalization, cross-volume and cancellation behavior.
+
+The r4 full build passes 24 binary, 10 adaptation and 65 updater/installer checks. Real standalone installation and GUI fallback evidence is recorded in verification.md. The original production PowerShell replacement transaction is unchanged.

@@ -29,17 +29,19 @@ internal static class Compatibility {
   string body=string.Join("\n",code.Select(Format))+"\nEH:"+string.Join(";",m.Body.ExceptionHandlers.Select(e=>e.HandlerType+":"+Operand(e.TryStart)+":"+Operand(e.TryEnd)+":"+Operand(e.HandlerStart)+":"+Operand(e.HandlerEnd)+":"+Operand(e.FilterStart)+":"+Operand(e.CatchType)));
   return Hashing.Sha(Encoding.UTF8.GetBytes(body));
  }
- internal static CompatibilityContract Create(ModuleDefMD module) {
+ static bool Native(string name)=>name.StartsWith("PCL.PageDownloadInstall",StringComparison.Ordinal)||name.StartsWith("PCL.PageDownloadLeft",StringComparison.Ordinal);
+ internal static CompatibilityContract Create(ModuleDefMD module,bool hostOnly=false) {
   string version=module.Assembly.Version.ToString();var selected=new HashSet<MethodDef>();var methods=module.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).ToArray();
-  foreach(string selector in Required){var matches=methods.Where(m=>m.DeclaringType.FullName+"::"+m.Name==selector).ToArray();if(matches.Length!=1)throw new InvalidDataException("关键补丁入口不唯一或缺失："+selector);selected.Add(matches[0]);}
-  foreach(var m in methods)if(m.Body.Instructions.Any(i=>i.OpCode==OpCodes.Ldstr&&i.Operand is string s&&(s=="Latest.exe"||s=="正式版 "+version)))selected.Add(m);
+  foreach(string selector in Required){if(hostOnly&&Native(selector))continue;var matches=methods.Where(m=>m.DeclaringType.FullName+"::"+m.Name==selector).ToArray();if(matches.Length!=1)throw new InvalidDataException("关键补丁入口不唯一或缺失："+selector);selected.Add(matches[0]);}
+  foreach(var m in methods)if((!hostOnly||!Native(Key(m)))&&m.Body.Instructions.Any(i=>i.OpCode==OpCodes.Ldstr&&i.Operand is string s&&(s=="Latest.exe"||s=="正式版 "+version)))selected.Add(m);
   return new CompatibilityContract{sourceSha256=SelfAdapter.KnownInputHash,version=version,methods=selected.OrderBy(Key,StringComparer.Ordinal).ToDictionary(Key,m=>Fingerprint(m,version),StringComparer.Ordinal)};
  }
- internal static void RequireCompatible(ModuleDefMD module) {
+ internal static void RequireCompatible(ModuleDefMD module,bool hostOnly=false) {
   using var resource=typeof(SelfAdapter).Assembly.GetManifestResourceStream("PCLRestore.Compatibility.json");
   using var bytes=new MemoryStream();resource!.CopyTo(bytes);var expected=JsonData.Read<CompatibilityContract>(bytes.ToArray());
   if(expected.sourceSha256!=SelfAdapter.KnownInputHash||expected.methods.Count==0)throw new InvalidDataException("适配规则缺失或无效。");
-  var actual=Create(module);
+  if(hostOnly)expected.methods=expected.methods.Where(x=>!Native(x.Key)).ToDictionary(x=>x.Key,x=>x.Value,StringComparer.Ordinal);
+  var actual=Create(module,hostOnly);
   if(expected.methods.Count!=actual.methods.Count||expected.methods.Any(x=>!actual.methods.TryGetValue(x.Key,out var fingerprint)||fingerprint!=x.Value))throw new InvalidDataException("官方新版关键方法结构已改变，无法自动恢复；保留当前版本。");
  }
  internal static void PreserveProtected(ModuleDefMD input,ModuleDefMD output) {

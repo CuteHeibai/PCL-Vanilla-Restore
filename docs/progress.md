@@ -1,18 +1,16 @@
 # PCL vanilla restoration progress
 
-Current implementation: r3 bootstraps from pinned official 2.99.0.1, then follows official stable packages and restores compatible binaries locally before replacement. Preserve official login/Client ID and installed-version component management; new installations remain vanilla-only. Distribution requires one EXE. Update artifacts remain under ExeDir/PCL/Cache/Update with bin/bak staging and system PowerShell; no temporary PCL updater EXE.
+Current r4 implementation includes independent vanilla download in the single EXE. Official updates prefer native restoration; changed native download methods use independent mode only when host startup, portability and updater contracts remain compatible. Host-incompatible updates retain the current usable EXE and its independent engine.
 
-- [x] Shared net8/net48 adapter, method compatibility contract and source/output binding.
-- [x] Official commit/ZIP source, strict extraction and version/source comparison.
-- [x] Embedded future adapter inheritance; in-memory dependencies without runtime SDK.
-- [x] Fail-closed staging and unchanged existing replacement/rollback transaction.
-- [x] 21 binary checks, 8 adapter tests and 52 updater regressions; real official download and second-generation restoration.
-- [x] Terra GUI smoke and full official-download/local-restoration/replacement/restart test in isolated simulated-old-profile fixture.
-- [x] Recursive release-binary privacy scan and r2 bootstrap compatibility validation.
-- [x] Usage, update-contract, verification and user-acceptance documentation.
+- [x] Embedded official catalog, verified client/library/native/assets/logging downloads, legacy asset maps and standard vanilla layout.
+- [x] WPF search/category/directory/name/progress/cancel UI with always-available main-window entry.
+- [x] Shared native/host compatibility guards; fallback and next-generation inheritance; native mode can resume.
+- [x] 99 full-build checks: 24 binary, 10 adapter, 65 updater/installer.
+- [x] Official26.3,26.4-snapshot-5,1.5.2 installations; GUI1.8.9 and synthetic fallback1.8.9; PCL recognition and26.3 menu verified.
+- [x] Same-volume complete publication, cross-volume exclusive ownership, no existing-version overwrite; staging remains under ExeDir/PCL.
+- [x] Independent review, privacy scan and legacy bootstrap candidate compatibility.
+- [x] Usage, engine, verification and acceptance docs updated.
 
-r3 published as 2.99.0.1-r3. EXE SHA256: fdc4027b085845057fa786f9700d3be4d7c62c5883f87ff1bfbb8b62aa67c51e. Source and stable bootstrap feed are on main. Publication order was source branch, release assets, then main/stable feed. Public EXE download matched the validated image; the old r2 embedded updater downloaded and verified public r3 twice. Future unknown structural changes must be rejected, not installed unmodified.
+r4 EXE SHA256: 6bf2ac269ca700070b4057e2a5d2d049200c43cd39474548a07efd5e39b4423d. Release assets must be published before advancing main/stable. Existing r3 users need a manual r4 upgrade to obtain this newly embedded engine; r2's old feed can bootstrap r4. Unknown future host structures and future Mojang schema changes are not promised compatible.
 
-Prior published r2 SHA256: 0db17d8120beda3175136b34c3a8810d9ae29177516a22776e1505c3a6b387fa. Existing user 2.8.2 EXE SHA256: 82d9044513afe207445df7e6142bb6e017335f600a6879b19ec6016ae440ee12; never overwrite the original launcher or existing game data.
-
-Fresh Microsoft authorization, forced token refresh, power-loss recovery and another computer's full GUI workflow remain untested. New modules no longer carry local PDB paths. Old public commit author emails are not rewritten without the outstanding authorization; future commits use the repository noreply identity. Never distribute runtime account/configuration/log folders with the release EXE.
+Original user2.8.2 EXE SHA25682d9044513afe207445df7e6142bb6e017335f600a6879b19ec6016ae440ee12 remains untouched. Never distribute QA/runtime data. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested. Old public author emails are not rewritten; new commits use noreply.
