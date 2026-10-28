@@ -1,4 +1,4 @@
-﻿param([ValidateRange(1,2147483647)][int]$PatchRevision = 4)
+﻿param([ValidateRange(1,2147483647)][int]$PatchRevision = 5)
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $officialCommit = '93ede5d9e638c99fcec853a9ba1eecd91ceee7f5'
@@ -18,7 +18,7 @@ if (-not (Test-Path -LiteralPath $officialExe)) {
     } finally { $archive.Dispose() }
 }
 if ((Get-FileHash -LiteralPath $officialExe -Algorithm SHA256).Hash -ne $officialHash) { throw 'Unsupported official EXE; input SHA-256 differs.' }
-foreach ($project in @('src/InjectedHooks','src/AdaptationCore','src/RestoreRuntime','src/Patcher','tests/PatcherChecks','tests/UpdaterTests','tests/AutoAdaptTests')) {
+foreach ($project in @('src/InjectedHooks','src/AdaptationCore','src/RestoreRuntime','src/Patcher','tests/PatcherChecks','tests/UpdaterTests','tests/AutoAdaptTests','tests/PclDownloadProbe','tests/PclDownloadProbeBuilder')) {
     & dotnet build $project -c Release --nologo -v:q
     if ($LASTEXITCODE -ne 0) { throw "Build failed: $project" }
 }

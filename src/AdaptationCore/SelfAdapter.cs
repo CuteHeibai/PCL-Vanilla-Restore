@@ -22,6 +22,7 @@ public static class SelfAdapter {
   try {
    using var input=ModuleDefMD.Load(original);
    if(input.Assembly==null||input.Assembly.Name!="Plain Craft Launcher 2"||input.Assembly.Version<new Version(2,99,0,1)||input.Resources.Any(r=>r.Name=="PCLRestore.Profile.json"))throw new InvalidDataException("候选不是兼容的官方原始程序。");
+   PclDownloadContract.Check(input);
    string mode="native";
    try {Compatibility.RequireCompatible(input);}catch(InvalidDataException){Compatibility.RequireCompatible(input,true);mode="independent";}
    var adapter=new Adapter(input,donor,revision,Hashing.Sha(original),sourceCommit!);
@@ -33,11 +34,12 @@ public static class SelfAdapter {
  }
  public static void Validate(byte[] original,byte[] image,byte[] runtime,int revision,string sourceCommit) {
   using(var library=ModuleDefMD.Load(runtime)) {
-   if(library.Assembly?.Name!="PCLRestore.Runtime"||!library.Resources.Any(r=>r.Name=="PCLRestore.Adaptation.dll")||!library.Resources.Any(r=>r.Name=="PCLRestore.dnlib.dll")||!library.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.VanillaInstaller"))throw new InvalidDataException("后续自动恢复或独立下载所需的内嵌引擎缺失。");
+   if(library.Assembly?.Name!="PCLRestore.Runtime"||!library.Resources.Any(r=>r.Name=="PCLRestore.Adaptation.dll")||!library.Resources.Any(r=>r.Name=="PCLRestore.dnlib.dll")||!library.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.VanillaInstaller")||!library.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.PclDownloadBridge"))throw new InvalidDataException("后续自动恢复或 PCL 下载接入模块缺失。");
   }
   using var input=ModuleDefMD.Load(original);using var output=ModuleDefMD.Load(image);
   if(output.Assembly.Version!=input.Assembly.Version||output.Assembly.Name!=input.Assembly.Name)throw new InvalidDataException("适配后程序身份改变。");
   Compatibility.PreserveProtected(input,output);
+  PclDownloadContract.Check(output);
   var marker=output.Resources.OfType<EmbeddedResource>().Single(r=>r.Name=="PCLRestore.Profile.json");var profile=JsonData.Read<AdaptationProfile>(marker.CreateReader().ReadBytes((int)marker.Length));
   if(profile.vanillaMode=="native") {
   var loader=output.GetTypes().Single(t=>t.FullName=="PCL.PageDownloadInstall").Methods.Single(m=>m.Name=="LoaderInit");

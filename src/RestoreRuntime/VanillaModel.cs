@@ -11,7 +11,7 @@ namespace PCLRestore.Runtime {
   internal string Id,Type,Url,Sha1;
   public override string ToString(){return Id+"  ·  "+Type;}
  }
- internal sealed class VanillaFile {internal string Url,Sha1,Path;internal long Size=-1;}
+ internal sealed class VanillaFile {internal string Url,Sha1,Path;internal long Size=-1;internal bool IsJson;}
  internal sealed class VanillaCopy {internal string Source,Target;}
  internal sealed class VanillaAssets {internal List<VanillaFile> Files=new List<VanillaFile>();internal List<VanillaCopy> Copies=new List<VanillaCopy>();}
  internal sealed class VanillaPlan {
@@ -33,8 +33,8 @@ namespace PCLRestore.Runtime {
   }
   internal static string Relative(string value){if(String.IsNullOrEmpty(value)||value.Contains("\\")||value.StartsWith("/")||value.Length>400)throw new InvalidDataException("游戏清单包含不安全路径。");foreach(string p in value.Split('/'))Name(p);return value;}
   internal static string Under(string root,string relative){Relative(relative);string prefix=Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar)+Path.DirectorySeparatorChar;string result=Path.GetFullPath(Path.Combine(prefix,relative.Replace('/',Path.DirectorySeparatorChar)));if(!result.StartsWith(prefix,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("游戏文件路径越界。");return result;}
-  internal static string Url(string value){Uri u;if(!Uri.TryCreate(value,UriKind.Absolute,out u)||u.Scheme!="https"||!String.IsNullOrEmpty(u.UserInfo)||!u.IsDefaultPort||!(u.Host=="piston-meta.mojang.com"||u.Host=="piston-data.mojang.com"||u.Host=="launchermeta.mojang.com"||u.Host=="launcher.mojang.com"||u.Host=="libraries.minecraft.net"||u.Host=="resources.download.minecraft.net"))throw new InvalidDataException("游戏文件地址不是受支持的官方 HTTPS 来源。");return u.AbsoluteUri;}
-  internal static List<VanillaVersion> Catalog(string json){var versions=Value(Json(json),"versions") as object[];if(versions==null||versions.Length>10000)throw new InvalidDataException("游戏版本清单为空或过大。");var result=new List<VanillaVersion>();var ids=new HashSet<string>(StringComparer.OrdinalIgnoreCase);foreach(var item in versions){var d=Map(item);var v=new VanillaVersion{Id=Name(Text(d,"id")),Type=Text(d,"type"),Url=Url(Text(d,"url")),Sha1=Hash(Text(d,"sha1"))};if(!ids.Add(v.Id))throw new InvalidDataException("游戏版本清单含重名项。");result.Add(v);}return result;}
+  internal static string Url(string value){Uri u;if(!Uri.TryCreate(value,UriKind.Absolute,out u)||u.Scheme!="https"||!String.IsNullOrEmpty(u.UserInfo)||!u.IsDefaultPort||!(u.Host=="piston-meta.mojang.com"||u.Host=="piston-data.mojang.com"||u.Host=="launchermeta.mojang.com"||u.Host=="launcher.mojang.com"||u.Host=="libraries.minecraft.net"||u.Host=="resources.download.minecraft.net"||u.Host=="bmclapi2.bangbang93.com"))throw new InvalidDataException("游戏文件地址不是受支持的 PCL 下载源。");return u.AbsoluteUri;}
+  internal static List<VanillaVersion> Catalog(string json){var versions=Value(Json(json),"versions") as object[];if(versions==null||versions.Length>10000)throw new InvalidDataException("游戏版本清单为空或过大。");var result=new List<VanillaVersion>();var ids=new HashSet<string>(StringComparer.OrdinalIgnoreCase);foreach(var item in versions){var d=Map(item);string url=Url(Text(d,"url")),sha=Value(d,"sha1") as string;var package=Regex.Match(new Uri(url).AbsolutePath,@"/v1/packages/([0-9a-fA-F]{40})/");if(sha==null&&package.Success)sha=package.Groups[1].Value;var v=new VanillaVersion{Id=Name(Text(d,"id")),Type=Text(d,"type"),Url=url,Sha1=sha==null?null:Hash(sha)};if(!ids.Add(v.Id))continue;result.Add(v);}return result;}
   internal static string Architecture {get {string arch=Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE")??"";return arch.IndexOf("ARM64",StringComparison.OrdinalIgnoreCase)>=0?"arm64":Environment.Is64BitOperatingSystem?"x64":"x86";}}
   internal static bool Allowed(Dictionary<string,object> library,string architecture){
    object raw=Value(library,"rules");if(raw==null)return true;var rules=raw as object[];if(rules==null)throw new InvalidDataException("依赖规则无效。");bool allowed=false;
@@ -43,7 +43,7 @@ namespace PCLRestore.Runtime {
     string action=Text(r,"action");if(action!="allow"&&action!="disallow")throw new InvalidDataException("依赖规则动作无效。");if(match)allowed=action=="allow";
    }return allowed;
   }
-  internal static VanillaFile FileDescriptor(Dictionary<string,object> d,string path){if(d==null)throw new InvalidDataException("文件描述缺失。");return new VanillaFile{Url=Url(Text(d,"url")),Sha1=Hash(Text(d,"sha1")),Size=Number(d,"size"),Path=Relative(path)};}
+  internal static VanillaFile FileDescriptor(Dictionary<string,object> d,string path){if(d==null)throw new InvalidDataException("文件描述缺失。");return new VanillaFile{Url=Url(Text(d,"url")),Sha1=Hash(Text(d,"sha1")),Size=Number(d,"size"),Path=Relative(path),IsJson=path.EndsWith(".json",StringComparison.OrdinalIgnoreCase)};}
   internal static VanillaPlan Plan(Dictionary<string,object> meta,string arch){
    if(Value(meta,"inheritsFrom")!=null)throw new InvalidDataException("独立下载器只安装纯原版。");
    var downloads=Map(Value(meta,"downloads"));var plan=new VanillaPlan{Client=FileDescriptor(Map(Value(downloads,"client")),"client.jar")};var index=Map(Value(meta,"assetIndex"));plan.IndexId=Name(Text(index,"id"));plan.Index=FileDescriptor(index,"assets/indexes/"+plan.IndexId+".json");

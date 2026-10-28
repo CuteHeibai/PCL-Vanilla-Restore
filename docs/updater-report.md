@@ -1,5 +1,11 @@
 # 官方更新与本地恢复
 
+## r5 原生下载契约
+
+独立安装界面继续内嵌，但清单、镜像及文件下载改用候选官方程序自己的 PCL API。适配前后检查三个候选源函数、列表 LoaderTask/结果字段、NetFile/LoaderDownload、完整 WaitForExit 签名，以及内嵌 MeloongCore 的 FileChecker 成员；缺失或不兼容即拒绝更新。原下载页不兼容但这些 API 和基础接入仍兼容时可继续使用 independent 模式。镜像方法体可随官方策略变化，无需维护第二套镜像地址替换规则。
+
+r5 完整检查为 26 项二进制、12 项适配、73 项更新/安装，共 111 项。最终真实官方原包和连续两代恢复已通过。下载测试探针只在 QA 副本注入入口，不进入生产更新过程；生产仍仅由系统 PowerShell 替换同名唯一 EXE。详见 [pcl-download.md](pcl-download.md) 和 [verification.md](verification.md)。
+
 r3 正常检查直接读取 `Meloong-Git/PCL` 中最近修改 `最新正式版.zip` 的提交，通过固定提交的 raw URL 下载原包。`update/stable.json` 仅供 r2 等旧客户端引导升级，r3 不以该清单作为正常官方更新源。
 
 ## 下载与适配

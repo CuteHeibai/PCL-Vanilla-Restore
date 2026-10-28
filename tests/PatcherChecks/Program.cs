@@ -34,6 +34,8 @@ using(var runtime=ModuleDefMD.Load(runtimeResource.CreateReader().ReadBytes((int
  Check(runtime.Resources.Any(r=>r.Name=="PCLRestore.Adaptation.dll"),"next-generation adapter is embedded");
  Check(Calls(Method(runtime,"PCLRestore.Runtime.OfficialUpdate","PrepareCore"),"PCLRestore.Adaptation.SelfAdapter","Adapt"),"official update invokes local restoration before replacement");
  Check(runtime.GetTypes().Any(t=>t.FullName=="PCLRestore.Runtime.VanillaInstaller"),"independent installer is embedded");
+ Check(Calls(Method(runtime,"PCLRestore.Runtime.VanillaInstaller","Install"),"PCLRestore.Runtime.PclDownloadBridge","Download"),"independent files use native PCL download bridge");
+ Check(!runtime.GetTypes().Single(t=>t.FullName=="PCLRestore.Runtime.VanillaInstaller").Methods.Any(m=>m.Name=="HttpDownload"),"independent installer has no parallel custom HTTP engine");
 }
 Check(Calls(Method(actual,"PCL.FormMain","FormMain_Loaded"),"PCLRestore.Hooks","Brand"),"independent download entry is connected to main window");
 Check(!actual.GetTypes().SelectMany(t=>t.Methods).Where(m=>m.HasBody).SelectMany(m=>m.Body.Instructions).Any(i=>i.OpCode==OpCodes.Ldstr && i.Operand is string s && s=="Latest.exe"),"no second cached launcher EXE");

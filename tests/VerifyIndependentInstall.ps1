@@ -1,27 +1,27 @@
-﻿param([string]$VersionId='26.3',[string]$Name='Independent-26.3',[string]$GameDirectory,[string]$ExePath)
+param(
+ [string]$VersionId='26.3', [string]$Name='PclNative-26.3',
+ [string]$GameDirectory, [string]$ExePath,
+ [ValidateSet(-1,0,1,2)][int]$SourcePreference=-1
+)
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
-if (-not $ExePath) {$ExePath=Join-Path $projectRoot 'artifacts/dist/PCL-Restore.bin'}
-if (-not $GameDirectory) {$GameDirectory=Join-Path $projectRoot 'artifacts/qa-full/.minecraft'}
-$metadata=[Reflection.Assembly]::ReflectionOnlyLoad([IO.File]::ReadAllBytes($ExePath))
-$stream=$metadata.GetManifestResourceStream('PCLRestore.Runtime.dll');$buffer=New-Object IO.MemoryStream;$stream.CopyTo($buffer);$runtime=[Reflection.Assembly]::Load($buffer.ToArray());$stream.Dispose();$buffer.Dispose()
-$flags=[Reflection.BindingFlags]'NonPublic,Instance'
-$type=$runtime.GetType('PCLRestore.Runtime.VanillaInstaller',$true)
-$cache=Join-Path $projectRoot 'artifacts/qa-independent/PCL/Cache/Vanilla'
-$installer=$type.GetConstructor($flags,$null,@([string]),$null).Invoke(@([string]$cache))
-$token=[Threading.CancellationToken]::None
-$list=$type.GetMethod('Catalog',$flags).Invoke($installer,@($token))
-$idField=$runtime.GetType('PCLRestore.Runtime.VanillaVersion').GetField('Id',$flags)
-$version=@($list|Where-Object {$idField.GetValue($_) -ceq $VersionId})
-if ($version.Count -ne 1) {throw 'Selected official version not found'}
-Write-Output ('Official catalog loaded; independently installing '+$VersionId+' as '+$Name)
-$clock=[Diagnostics.Stopwatch]::StartNew()
-try {$null=$type.GetMethod('Install',$flags).Invoke($installer,@($version[0].PSObject.BaseObject,[string]$GameDirectory,[string]$Name,$token,$null))}catch {Write-Output $_.Exception.ToString();exit 1}
-$directory=Join-Path (Join-Path $GameDirectory 'versions') $Name
-$json=Get-Content -LiteralPath (Join-Path $directory ($Name+'.json')) -Raw | ConvertFrom-Json
-$actual=(Get-FileHash -LiteralPath (Join-Path $directory ($Name+'.jar')) -Algorithm SHA1).Hash
-if ($json.id -ne $Name -or $actual -ne $json.downloads.client.sha1) {throw 'Installed client hash or ID mismatch'}
-$config=Get-Content -LiteralPath (Join-Path $directory 'PCL/config.json') -Raw | ConvertFrom-Json
-if ($config.MinecraftInstallManifest.Components.MinecraftVersion -ne $VersionId -or @($config.MinecraftInstallManifest.Components.ModLoaderVersions.psobject.Properties).Count) {throw 'Pure install manifest mismatch'}
-Write-Output ('PASS official independent installation: '+$VersionId+'; client SHA1 '+$actual+'; seconds '+[int]$clock.Elapsed.TotalSeconds)
-Write-Output 'PASS metadata and pure PCL component manifest; shared dependencies verified/reused or downloaded'
+if(-not $ExePath){$ExePath=Join-Path $projectRoot 'artifacts/dist/PCL-Restore.bin'}
+if(-not $GameDirectory){$GameDirectory=Join-Path $projectRoot 'artifacts/qa-full/.minecraft'}
+$probeRoot=Join-Path $projectRoot 'artifacts/qa-pcl-native'
+$probeExe=Join-Path $probeRoot 'PCL.exe'
+$report=Join-Path $probeRoot 'PCL/Cache/Vanilla/probe-report.json'
+Push-Location -LiteralPath $projectRoot
+try {
+ foreach($project in @('tests/PclDownloadProbe','tests/PclDownloadProbeBuilder')){
+  & dotnet build $project -c Release --nologo -v:q
+  if($LASTEXITCODE -ne 0){throw 'Probe build failed'}
+ }
+ & dotnet tests/PclDownloadProbeBuilder/bin/Release/net8.0/PclDownloadProbeBuilder.dll $ExePath tests/PclDownloadProbe/bin/Release/net48/PclDownloadProbe.dll $probeExe
+ if($LASTEXITCODE -ne 0){throw 'Probe preparation failed'}
+ if(Test-Path -LiteralPath $report){Remove-Item -LiteralPath $report}
+ & $probeExe $VersionId $Name $SourcePreference ( [IO.Path]::GetFullPath($GameDirectory) ) | Out-Host
+ if(-not (Test-Path -LiteralPath $report)){throw 'Native probe did not report completion'}
+ $result=Get-Content -LiteralPath $report -Raw -Encoding UTF8 | ConvertFrom-Json
+ if($result.status -ne 'passed'){throw $result.error}
+ $result | ConvertTo-Json
+} finally {Pop-Location}

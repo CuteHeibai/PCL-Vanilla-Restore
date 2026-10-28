@@ -1,16 +1,14 @@
 # PCL vanilla restoration progress
 
-Current r4 implementation includes independent vanilla download in the single EXE. Official updates prefer native restoration; changed native download methods use independent mode only when host startup, portability and updater contracts remain compatible. Host-incompatible updates retain the current usable EXE and its independent engine.
+Current r5 reuses PCL's actual version-list loader, mirror/source helpers and NetFile/FileChecker/LoaderDownload engine. Independent UI and vanilla installation planning remain embedded in the single EXE. Official updates still adapt locally; native-download API or essential-host incompatibility retains the working EXE.
 
-- [x] Embedded official catalog, verified client/library/native/assets/logging downloads, legacy asset maps and standard vanilla layout.
-- [x] WPF search/category/directory/name/progress/cancel UI with always-available main-window entry.
-- [x] Shared native/host compatibility guards; fallback and next-generation inheritance; native mode can resume.
-- [x] 99 full-build checks: 24 binary, 10 adapter, 65 updater/installer.
-- [x] Official26.3,26.4-snapshot-5,1.5.2 installations; GUI1.8.9 and synthetic fallback1.8.9; PCL recognition and26.3 menu verified.
-- [x] Same-volume complete publication, cross-volume exclusive ownership, no existing-version overwrite; staging remains under ExeDir/PCL.
-- [x] Independent review, privacy scan and legacy bootstrap candidate compatibility.
-- [x] Usage, engine, verification and acceptance docs updated.
+- [x] Native official/BMCLAPI source ordering, version/file settings, concurrency/rate/splitting/retry/cancellation reuse.
+- [x] 111 full-build checks: 26 binary, 12 adapter, 73 updater/installer; zero warnings/errors.
+- [x] Actual native official-preferred1.8.9 and BMCLAPI-preferred1.5.2 installations. GUI26.3 installation and final-byte26.3 CLI installation. Source settings restored after probes.
+- [x] Final-byte GUI/list/status smoke; actual official ZIP adaptation and consecutive generation adaptation.
+- [x] Shared completed files survive failed batches; version publication and same-name protection retained.
+- [x] Independent review with no remaining P1/P2; final recursive privacy scan clear of known personal/test identifiers and JWT/private-key patterns.
+- [x] Original user2.8.2 untouched; production remains one EXE with generated data under ExeDir/PCL and selected game output.
+- [ ] Publish r5 assets, verify public download and old-client bootstrap, then advance main/stable.
 
-r4 published as2.99.0.1-r4; source and stable bootstrap feed on main. EXE SHA256: 6bf2ac269ca700070b4057e2a5d2d049200c43cd39474548a07efd5e39b4423d. Public EXE and both server asset digests match the validated image; old r2's production module downloaded and verified public r4 twice. Assets were published before advancing main/stable. Existing r3 users need a manual r4 upgrade to obtain this newly embedded engine; r2's old feed can bootstrap r4. Unknown future host structures and future Mojang schema changes are not promised compatible.
-
-Original user2.8.2 EXE SHA25682d9044513afe207445df7e6142bb6e017335f600a6879b19ec6016ae440ee12 remains untouched. Never distribute QA/runtime data. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested. Old public author emails are not rewritten; new commits use noreply.
+Final EXE SHA256: 8befb2376c0bf941688819b6fde31afcf760525f115dc4767120977e8acbba04. Existing r3/r4 users need a manual r5 upgrade for this changed engine. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested; r4 game-menu/component evidence is historical. Unknown future host/API structures retain the current usable version. Old public author emails are not rewritten; new commits use noreply. Never distribute QA/runtime data.
