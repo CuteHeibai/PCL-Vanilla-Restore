@@ -8,4 +8,4 @@ Architecture: native-compatible input still uses RestoreVanilla. Otherwise requi
 - [x] Implement guarded native page transplantation and remove all separate-window hooks/messages. Remove the former custom installer, obsolete tests/probes and update binary checks.
 - [x] Full95-check build, real official two-generation adaptation and privacy scan; independent review found generic member attributes gap, fixed with failing/passing regression and reviewer confirmation.
 - [x] Terra checks normal and synthetic fallback in the original download location, no extra button/window, real26.3 vanilla installation and PCL recognition. Original folder/version selection restored, no game launch.
-- [ ] Privacy scan, docs, r6 single-EXE publication and public-byte/bootstrap verification.
+- [x] Privacy scan, docs and r6 publication; server asset hashes/public EXE match final, old r2 production module downloaded and verified public r6 twice. Main/stable advanced after assets, history/tags retained.
