@@ -9,4 +9,4 @@ User correction (2026-10-28): both download mechanics and mirror selection must 
 - [x] Guard native API signatures and embedded FileChecker before accepting automatic updates. Add failing then passing contract and failed-batch regression tests.
 - [x] Actual native-engine CLI installs: official-preferred fresh1.8.9 and BMCLAPI-preferred fresh1.5.2. Restore original source preferences. All probe changes are on QA copies, never production entry point.
 - [x] Final source review, actual GUI install, 111 checks, final-byte official/native probes and privacy scan; documentation updated.
-- [ ] Publish r5 single EXE and verify public download/bootstrap bytes.
+- [x] Published r5 single EXE; verified both uploaded asset digests, public EXE bytes and old r2 production bootstrap download/verification twice. Source/main/stable advanced without rewriting history.

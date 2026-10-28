@@ -9,6 +9,6 @@ Current r5 reuses PCL's actual version-list loader, mirror/source helpers and Ne
 - [x] Shared completed files survive failed batches; version publication and same-name protection retained.
 - [x] Independent review with no remaining P1/P2; final recursive privacy scan clear of known personal/test identifiers and JWT/private-key patterns.
 - [x] Original user2.8.2 untouched; production remains one EXE with generated data under ExeDir/PCL and selected game output.
-- [ ] Publish r5 assets, verify public download and old-client bootstrap, then advance main/stable.
+- [x] Published2.99.0.1-r5; both server asset digests and redownloaded public EXE match final SHA256. Old r2 production updater downloaded public r5 through main/stable and verified twice. Assets were published before advancing main/stable.
 
 Final EXE SHA256: 8befb2376c0bf941688819b6fde31afcf760525f115dc4767120977e8acbba04. Existing r3/r4 users need a manual r5 upgrade for this changed engine. Fresh authorization, forced refresh, abrupt power loss and another computer's complete workflow remain untested; r4 game-menu/component evidence is historical. Unknown future host/API structures retain the current usable version. Old public author emails are not rewritten; new commits use noreply. Never distribute QA/runtime data.
